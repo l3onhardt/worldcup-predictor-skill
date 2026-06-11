@@ -261,3 +261,33 @@ test("value scan blends devigged market with model and reports divergence", () =
   }
   assert.ok(typeof report.marketAgeHours === "number");
 });
+
+test("predict-match with --market blends probabilities and stays unchanged without it", () => {
+  const plain = spawnSync(
+    process.execPath,
+    ["scripts/predict-match.mjs", "--home", "MEX", "--away", "KOR", "--match", "sample-group-a-1"],
+    { cwd: skillDir, encoding: "utf8" },
+  );
+  const withMarket = spawnSync(
+    process.execPath,
+    [
+      "scripts/predict-match.mjs", "--home", "MEX", "--away", "KOR", "--match", "sample-group-a-1",
+      "--market", "assets/sample-data/market-snapshot.json",
+    ],
+    { cwd: skillDir, encoding: "utf8" },
+  );
+  assert.equal(plain.status, 0, plain.stderr);
+  assert.equal(withMarket.status, 0, withMarket.stderr);
+  const plainResult = JSON.parse(plain.stdout);
+  const marketResult = JSON.parse(withMarket.stdout);
+  assert.equal(plainResult.marketBlend, undefined);
+  assert.ok(marketResult.marketBlend);
+  assert.equal(marketResult.marketBlend.fallback, undefined);
+  // 不带 --market 的字段保持完全不变
+  assert.equal(marketResult.homeWin90Prob, plainResult.homeWin90Prob);
+  const sum =
+    marketResult.marketBlend.blended90Prob["3"] +
+    marketResult.marketBlend.blended90Prob["1"] +
+    marketResult.marketBlend.blended90Prob["0"];
+  assert.ok(Math.abs(sum - 1) < 1e-6);
+});
