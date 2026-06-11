@@ -9,10 +9,24 @@ Use this skill to run deterministic World Cup predictions from an offline audite
 
 ## Workflow
 
-1. Obtain a structured audited snapshot. Do not scrape or invent missing official facts.
+1. Obtain a structured audited snapshot. If it may be stale, refresh fundamentals first (network allowed only in refresh/fetch scripts):
+
+```bash
+node scripts/refresh-snapshot.mjs --check
+node scripts/refresh-snapshot.mjs --base <snapshot> --out <fresh-snapshot> [--force]
+```
+
 2. Read `references/data-schema.md` and validate source versions, one complete strength version, and completed match fields.
 3. If official provenance is relevant, read `references/official-data-sources.md`; use its source index only to audit snapshot lineage, not as live prediction input.
-4. Run the relevant CLI from the skill directory:
+4. **Before touching any market data**, blind-commit the pure model predictions, then fetch markets and scan:
+
+```bash
+node scripts/blind-commit.mjs --data <snapshot> --all
+node scripts/fetch-market.mjs --gamma-slug <event-slug> --match-id <id> --home <name> --away <name> --out market.json
+node scripts/value-scan.mjs --data <snapshot> --market market.json
+```
+
+5. Run the relevant prediction CLI from the skill directory:
 
 ```bash
 node scripts/predict-match.mjs --data <snapshot> --home FRA --away BRA
@@ -23,9 +37,9 @@ node scripts/simulate-tournament.mjs --data <snapshot> --simulations 10000 --see
 node scripts/generate-lottery-slip.mjs --issue <issue> --strategy balanced --budget 288
 ```
 
-5. Explain only the returned probabilities and audit metadata. State uncertainty and fallback status.
-6. Keep `90minResult` and `advanceResult` separate in every report.
-7. When a market snapshot is supplied, report model, devigged market, and blended probabilities together, plus divergence flags. Treat EV/Kelly as analysis references only. Warn when the snapshot is stale.
+6. Explain only the returned probabilities and audit metadata. State uncertainty and fallback status.
+7. Keep `90minResult` and `advanceResult` separate in every report.
+8. When a market snapshot is supplied, report model, devigged market, and blended probabilities together, plus divergence flags and `blindCommit` status. Treat EV/Kelly as analysis references only. Warn when snapshots are stale.
 
 ## Non-Negotiable Rules
 
@@ -37,6 +51,8 @@ node scripts/generate-lottery-slip.mjs --issue <issue> --strategy balanced --bud
 - Ignore `llm_extraction` adjustments. Apply only `manual_review` or versioned `deterministic_rule` adjustments.
 - Asian handicap, over/under, and BTTS outputs always use the `90minResult` scope.
 - Market snapshots never modify `dataVersion`; blended and pure-model probabilities must both be reported.
+- Market-like sources (polymarket/odds/betting) are rejected from fundamental `sourceVersions` by the audit firewall.
+- Run blind-commit before fetching market data whenever provable model independence matters.
 - Never present EV or Kelly fractions as betting advice or guaranteed value.
 - Never claim guaranteed accuracy, returns, purchasing advice, or official endorsement.
 
@@ -54,5 +70,6 @@ node scripts/generate-lottery-slip.mjs --issue <issue> --strategy balanced --bud
 - Read `references/official-data-sources.md` before assessing official source provenance or deciding whether a source may affect predictions.
 - Read `references/model-methodology.md` when explaining calculations and limitations.
 - Read `references/market-methodology.md` before explaining market blending, devig, fair pricing, EV, or Kelly outputs.
+- Read `references/data-pipeline.md` before refreshing snapshots, explaining freshness/TTL, or verifying blind commits.
 - Read `references/tournament-rules.md` for completed-result continuation and 2026 paths.
 - Read `references/lottery-rules.md` before producing a 3/1/0 reference list.
