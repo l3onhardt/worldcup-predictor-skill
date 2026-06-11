@@ -1,0 +1,17 @@
+{
+  "comment": "Map external source team names / codes to snapshot team ids. Keys are lowercase.",
+  "eloCodes": {
+    "MX": "MEX", "KR": "KOR", "CZ": "CZE", "ZA": "RSA",
+    "CA": "CAN", "CH": "SUI", "QA": "QAT", "BA": "BIH",
+    "BR": "BRA", "MA": "MAR", "SC": "SCO", "HT": "HAI",
+    "FR": "FRA", "US": "USA", "JP": "JPN", "AU": "AUS"
+  },
+  "names": {
+    "mexico": "MEX", "korea republic": "KOR", "south korea": "KOR",
+    "czechia": "CZE", "czech republic": "CZE", "south africa": "RSA",
+    "canada": "CAN", "switzerland": "SUI", "qatar": "QAT",
+    "bosnia and herzegovina": "BIH", "brazil": "BRA", "morocco": "MAR",
+    "scotland": "SCO", "haiti": "HAI", "france": "FRA",
+    "united states": "USA", "usa": "USA", "japan": "JPN", "australia": "AUS"
+  }
+}
