@@ -177,6 +177,7 @@ test("copied skill runs all bundled CLIs without the web app", () => {
     const commands = [
       ["scripts/predict-match.mjs", "--home", "MEX", "--away", "KOR"],
       ["scripts/predict-markets.mjs", "--home", "MEX", "--away", "KOR"],
+      ["scripts/value-scan.mjs", "--market", "assets/sample-data/market-snapshot.json"],
       ["scripts/simulate-tournament.mjs", "--simulations", "2", "--seed", "standalone"],
       ["scripts/generate-lottery-slip.mjs", "--strategy", "balanced", "--budget", "288"],
     ];
@@ -237,4 +238,26 @@ test("gamma outright event transforms into one outright market", () => {
   assert.equal(markets[0].outcomes.length, 2);
   assert.ok(Math.abs(markets[0].outcomes[0].impliedProb - 0.18) < 1e-9);
   assert.ok(markets[0].outcomes[0].price > 5.5);
+});
+
+test("value scan blends devigged market with model and reports divergence", () => {
+  const result = spawnSync(
+    process.execPath,
+    ["scripts/value-scan.mjs", "--market", "assets/sample-data/market-snapshot.json"],
+    { cwd: skillDir, encoding: "utf8" },
+  );
+  assert.equal(result.status, 0, result.stderr);
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.fallback, undefined);
+  assert.equal(report.matches.length, 1);
+  const match = report.matches[0];
+  assert.equal(match.resultScope, "90minResult");
+  const blendedSum = match.blended90Prob["3"] + match.blended90Prob["1"] + match.blended90Prob["0"];
+  assert.ok(Math.abs(blendedSum - 1) < 1e-6);
+  assert.equal(match.divergence.length, 3);
+  for (const outcome of match.valueMetrics) {
+    assert.ok(Number.isFinite(outcome.ev));
+    assert.ok(outcome.kellyFraction >= 0 && outcome.kellyFraction <= 0.1);
+  }
+  assert.ok(typeof report.marketAgeHours === "number");
 });
