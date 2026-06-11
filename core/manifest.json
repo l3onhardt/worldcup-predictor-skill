@@ -2,9 +2,9 @@
   "skillVersion": "0.3.0",
   "sourceVersion": "prediction-core v0.3.0 (in-repo)",
   "modelVersion": "model-v0.3-market",
-  "sourceHash": "a6ccb9371d33f325386ed452db479f5cd830533cf30a786e58d7c8fda34116a7",
+  "sourceHash": "9462e610e9b4e7567b49e7155fe0d3df1a0504c96a211ee683c7198684592921",
   "files": {
-    "betting.mjs": "8ab8c93457c64faac187ce23a7d76882897ac6f8e6524b1de2bc482e9754fbdd",
+    "betting.mjs": "59ea082b65b8691b01d4458b58b4a8c358b8ecb7267cd80ccf6f2f463d61fc41",
     "index.mjs": "6ac691abf9ed29c589201201ea0a82d20357705a3c3e5bb589f6f971c4af99d7",
     "markets.mjs": "f5951635d88f19b0a87c184f3d7c9cf3be802bb25d52d70270ab095d38cf637c",
     "match.mjs": "247cffadbce62879ef9e24a5a84eea7056048c6595ce669d2d7579ca8bc57544",

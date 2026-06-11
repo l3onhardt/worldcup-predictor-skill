@@ -291,3 +291,28 @@ test("predict-match with --market blends probabilities and stays unchanged witho
     marketResult.marketBlend.blended90Prob["0"];
   assert.ok(Math.abs(sum - 1) < 1e-6);
 });
+
+test("lottery slip without market data is identical to model-only behaviour", () => {
+  const issue = readSample("lottery-issue.json");
+  const slip = skillCore.generateBettingSlip({ issue, strategy: "balanced", generatedAt: issue.generatedAt });
+  for (const selection of slip.selections) {
+    assert.equal(selection.probabilitySource, "model_only");
+  }
+});
+
+test("lottery slip blends market310 probabilities when present", () => {
+  const issue = readSample("lottery-issue.json");
+  const blendedIssue = {
+    ...issue,
+    matches: issue.matches.map((match, index) =>
+      index === 0
+        ? { ...match, market310: { "3": 0.55, "1": 0.25, "0": 0.2 } }
+        : match,
+    ),
+  };
+  const slip = skillCore.generateBettingSlip({ issue: blendedIssue, strategy: "balanced", generatedAt: issue.generatedAt });
+  const first = slip.selections.find((selection) => selection.matchId === issue.matches[0].matchId);
+  assert.equal(first.probabilitySource, "blended");
+  // market 0.55 / model 0.38, weight 0.7 → 0.7*0.55 + 0.3*0.38 = 0.499
+  assert.ok(Math.abs(first.probabilities["3"] - 0.499) < 1e-3);
+});
