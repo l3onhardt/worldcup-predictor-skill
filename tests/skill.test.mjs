@@ -168,7 +168,7 @@ test("knockout draw advancement is softer than pure rating projection", () => {
   assert.ok(probability < 0.61);
 });
 
-test("copied skill runs all three CLIs without the web app", () => {
+test("copied skill runs all bundled CLIs without the web app", () => {
   const tempRoot = mkdtempSync(join(tmpdir(), "worldcup-predictor-skill-"));
   const copiedSkill = join(tempRoot, "worldcup-predictor");
   cpSync(skillDir, copiedSkill, { recursive: true });
@@ -176,6 +176,7 @@ test("copied skill runs all three CLIs without the web app", () => {
   try {
     const commands = [
       ["scripts/predict-match.mjs", "--home", "MEX", "--away", "KOR"],
+      ["scripts/predict-markets.mjs", "--home", "MEX", "--away", "KOR"],
       ["scripts/simulate-tournament.mjs", "--simulations", "2", "--seed", "standalone"],
       ["scripts/generate-lottery-slip.mjs", "--strategy", "balanced", "--budget", "288"],
     ];
