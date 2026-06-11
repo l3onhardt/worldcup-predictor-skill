@@ -1,0 +1,15 @@
+{
+  "source": "manual",
+  "fetchedAt": "2026-06-04T12:00:00.000Z",
+  "markets": [
+    {
+      "matchId": "sample-group-a-1",
+      "type": "1x2",
+      "outcomes": [
+        { "name": "3", "label": "Mexico", "price": 2.3, "impliedProb": 0.4348 },
+        { "name": "1", "label": "Draw", "price": 3.2, "impliedProb": 0.3125 },
+        { "name": "0", "label": "South Korea", "price": 3.1, "impliedProb": 0.3226 }
+      ]
+    }
+  ]
+}

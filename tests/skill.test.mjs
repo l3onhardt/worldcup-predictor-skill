@@ -13,6 +13,8 @@ import {
   dataVersionFromSources,
   reviewedContextAdjustments,
 } from "../scripts/audit-input.mjs";
+import { auditMarketSnapshot } from "../scripts/market-input.mjs";
+import { gammaEventToMarkets, manualToSnapshot } from "../scripts/fetch-market.mjs";
 
 const skillDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -188,4 +190,50 @@ test("copied skill runs all three CLIs without the web app", () => {
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
   }
+});
+
+test("market snapshot audit accepts valid input and rejects bad prices", () => {
+  const valid = auditMarketSnapshot(readSample("market-snapshot.json"));
+  assert.equal(valid.markets[0].type, "1x2");
+  assert.ok(valid.markets[0].overround > 1);
+  assert.throws(
+    () => auditMarketSnapshot({ source: "manual", fetchedAt: "2026-06-04T12:00:00.000Z", markets: [{ matchId: "x", type: "1x2", outcomes: [{ name: "3", price: 0.9 }, { name: "0", price: 2 }] }] }),
+    /price/,
+  );
+  assert.throws(() => auditMarketSnapshot({ source: "manual", markets: [] }), /fetchedAt/);
+});
+
+test("manual odds convert to a market snapshot with implied probabilities", () => {
+  const snapshot = manualToSnapshot({
+    fetchedAt: "2026-06-04T12:00:00.000Z",
+    matches: [
+      {
+        matchId: "sample-group-a-1",
+        homeName: "Mexico",
+        awayName: "South Korea",
+        odds: { "3": 2.3, "1": 3.2, "0": 3.1 },
+      },
+    ],
+  });
+  assert.equal(snapshot.source, "manual");
+  const market = snapshot.markets[0];
+  assert.equal(market.type, "1x2");
+  const homeOutcome = market.outcomes.find((outcome) => outcome.name === "3");
+  assert.ok(Math.abs(homeOutcome.impliedProb - 1 / 2.3) < 1e-4);
+});
+
+test("gamma outright event transforms into one outright market", () => {
+  const event = {
+    slug: "2026-fifa-world-cup-winner",
+    markets: [
+      { id: "m1", groupItemTitle: "France", outcomes: '["Yes","No"]', outcomePrices: '["0.18","0.82"]' },
+      { id: "m2", groupItemTitle: "Brazil", outcomes: '["Yes","No"]', outcomePrices: '["0.15","0.85"]' },
+    ],
+  };
+  const markets = gammaEventToMarkets(event);
+  assert.equal(markets.length, 1);
+  assert.equal(markets[0].type, "outright");
+  assert.equal(markets[0].outcomes.length, 2);
+  assert.ok(Math.abs(markets[0].outcomes[0].impliedProb - 0.18) < 1e-9);
+  assert.ok(markets[0].outcomes[0].price > 5.5);
 });
