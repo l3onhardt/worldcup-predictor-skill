@@ -1,6 +1,6 @@
 ---
 name: worldcup-predictor
-description: Use when an agent must act as 世界杯预测机 for World Cup prediction, 2026 世界杯模拟, 世界杯胜平负概率, 90-minute match probabilities, champion or qualification probability explanation, audited offline input checks, completed-result tournament continuation, or cautious China football lottery 3/1/0 reference lists.
+description: Use when an agent must act as 世界杯预测机 for World Cup prediction, 2026 世界杯模拟, 世界杯胜平负概率, 90-minute match probabilities, champion or qualification probability explanation, audited offline input checks, completed-result tournament continuation, Asian handicap and over/under fair pricing, market odds blending and value scanning (Polymarket or manual odds), or cautious China football lottery 3/1/0 reference lists.
 ---
 
 # 世界杯预测机 / World Cup Predictor
@@ -16,12 +16,16 @@ Use this skill to run deterministic World Cup predictions from an offline audite
 
 ```bash
 node scripts/predict-match.mjs --data <snapshot> --home FRA --away BRA
+node scripts/predict-markets.mjs --data <snapshot> --home FRA --away BRA
+node scripts/fetch-market.mjs --manual <odds.json> --out market.json
+node scripts/value-scan.mjs --data <snapshot> --market market.json
 node scripts/simulate-tournament.mjs --data <snapshot> --simulations 10000 --seed 2026
 node scripts/generate-lottery-slip.mjs --issue <issue> --strategy balanced --budget 288
 ```
 
 5. Explain only the returned probabilities and audit metadata. State uncertainty and fallback status.
 6. Keep `90minResult` and `advanceResult` separate in every report.
+7. When a market snapshot is supplied, report model, devigged market, and blended probabilities together, plus divergence flags. Treat EV/Kelly as analysis references only. Warn when the snapshot is stale.
 
 ## Non-Negotiable Rules
 
@@ -31,12 +35,16 @@ node scripts/generate-lottery-slip.mjs --issue <issue> --strategy balanced --bud
 - Apply host advantage only when `venueCountryCode` matches the team's country.
 - Treat `officialFacts`, weather, and news as audit context only.
 - Ignore `llm_extraction` adjustments. Apply only `manual_review` or versioned `deterministic_rule` adjustments.
+- Asian handicap, over/under, and BTTS outputs always use the `90minResult` scope.
+- Market snapshots never modify `dataVersion`; blended and pure-model probabilities must both be reported.
+- Never present EV or Kelly fractions as betting advice or guaranteed value.
 - Never claim guaranteed accuracy, returns, purchasing advice, or official endorsement.
 
 ## Bundled Data
 
 - `assets/sample-data/worldcup-2026.json`: compact synthetic audited smoke-test snapshot.
 - `assets/sample-data/synthetic-48-team.json`: synthetic 48-team snapshot with 73 completed matches.
+- `assets/sample-data/market-snapshot.json`: synthetic manual-odds market snapshot for smoke tests.
 - `assets/official-sources.json`: lightweight official source registry metadata only.
 - Samples are not official feeds and contain no licensed marks or crests. The source registry does not include official data, raw responses, media, or live feeds.
 
@@ -45,5 +53,6 @@ node scripts/generate-lottery-slip.mjs --issue <issue> --strategy balanced --bud
 - Read `references/data-schema.md` before preparing or validating snapshots.
 - Read `references/official-data-sources.md` before assessing official source provenance or deciding whether a source may affect predictions.
 - Read `references/model-methodology.md` when explaining calculations and limitations.
+- Read `references/market-methodology.md` before explaining market blending, devig, fair pricing, EV, or Kelly outputs.
 - Read `references/tournament-rules.md` for completed-result continuation and 2026 paths.
 - Read `references/lottery-rules.md` before producing a 3/1/0 reference list.
