@@ -1,6 +1,6 @@
 ---
 name: worldcup-predictor
-description: Use when an agent must act as 世界杯预测机 for World Cup prediction, 2026 世界杯模拟, 世界杯胜平负概率, 90-minute match probabilities, champion or qualification probability explanation, audited offline input checks, completed-result tournament continuation, Asian handicap and over/under fair pricing, market odds blending and value scanning (Polymarket or manual odds), or cautious China football lottery 3/1/0 reference lists.
+description: Use when an agent must act as 世界杯预测机 for World Cup prediction, 2026 世界杯模拟, 世界杯胜平负概率, 90-minute match probabilities, champion or qualification probability explanation, audited offline input checks, completed-result tournament continuation, fundamental snapshot refresh (Elo/FIFA/results), blind-commit model independence verification, Asian handicap and over/under fair pricing, market odds blending and value scanning (Polymarket or manual odds), or cautious China football lottery 3/1/0 reference lists.
 ---
 
 # 世界杯预测机 / World Cup Predictor

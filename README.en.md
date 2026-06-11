@@ -58,6 +58,9 @@ Use worldcup-predictor to scan these odds for value against the model.
 - Price Asian handicaps (with quarter-line splits), all over/under lines, and BTTS from the same score matrix.
 - Build market snapshots from Polymarket or manual bookmaker odds, devig them, and blend with model probabilities (market weight 0.7 by default).
 - Report model-vs-market divergence, EV, and quarter-Kelly analysis references (not betting advice).
+- Refresh fundamental snapshots on TTL (World Elo / FIFA ranking / football-data results) with quality gates that keep previous values on failure.
+- Blind commits: hash model probabilities to disk before touching market prices, with verifiable time order proving independence.
+- Audit firewall: market-like sources (polymarket/odds/betting) are rejected from fundamental snapshots.
 - Keep `90minResult` and `advanceResult` strictly separate.
 - Ignore unreviewed LLM-extracted context adjustments.
 
@@ -104,6 +107,14 @@ node scripts/fetch-market.mjs --manual my-odds.json --out market.json
 node scripts/value-scan.mjs \
   --data assets/sample-data/worldcup-2026.json \
   --market assets/sample-data/market-snapshot.json
+
+# Refresh fundamental snapshot (Elo/FIFA/results, TTL-driven)
+node scripts/refresh-snapshot.mjs \
+  --base assets/sample-data/worldcup-2026.json \
+  --out fresh-snapshot.json
+
+# Blind commit (lock model probabilities before touching market prices)
+node scripts/blind-commit.mjs --data fresh-snapshot.json --all
 ```
 
 Every command writes JSON to standard output for further processing by agents, scripts, or applications.
@@ -125,6 +136,7 @@ Detailed references:
 - [`references/official-data-sources.md`](references/official-data-sources.md)
 - [`references/model-methodology.md`](references/model-methodology.md)
 - [`references/market-methodology.md`](references/market-methodology.md)
+- [`references/data-pipeline.md`](references/data-pipeline.md)
 - [`references/tournament-rules.md`](references/tournament-rules.md)
 - [`references/lottery-rules.md`](references/lottery-rules.md)
 
