@@ -1,4 +1,4 @@
-// Generated from packages/prediction-core. Run pnpm skill:sync-core to refresh.
+// prediction-core v0.3.0 — maintained in this repository (worldcup-predictor-skill).
 import { DEFAULT_MODEL_VERSION, DEFAULT_SIMULATION_COUNT } from "./version.mjs";
 import { chooseAdvancementWinner, scoreDistribution, simulateNinetyMinutes } from "./match.mjs";
 import { createSeededRng, round, teamCode, teamKey, teamRating } from "./utils.mjs";

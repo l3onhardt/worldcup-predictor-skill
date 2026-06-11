@@ -1,4 +1,4 @@
-// Generated from packages/prediction-core. Run pnpm skill:sync-core to refresh.
+// prediction-core v0.3.0 — maintained in this repository (worldcup-predictor-skill).
 import { DEFAULT_MODEL_VERSION } from "./version.mjs";
 import { clamp, poisson, round, teamKey, teamRating } from "./utils.mjs";
 const DEFAULT_DATA_VERSION = "unknown-data";
@@ -111,13 +111,8 @@ export function expectedGoals(homeTeam, awayTeam, context) {
 }
 function dixonColesRho(lambdaHome, lambdaAway) {
     const avgLambda = (lambdaHome + lambdaAway) / 2;
-    if (avgLambda < 1.0)
-        return -0.13;
-    if (avgLambda < 1.4)
-        return -0.10;
-    if (avgLambda < 1.8)
-        return -0.06;
-    return -0.03;
+    // 对原 4 档阶梯（-0.13/-0.10/-0.06/-0.03）的连续线性拟合，消除档位边界跳变。
+    return clamp(0.0833 * avgLambda - 0.1967, -0.15, -0.02);
 }
 function dixonColesAdjustment(homeGoals, awayGoals, lambdaHome, lambdaAway) {
     const rho = dixonColesRho(lambdaHome, lambdaAway);
@@ -163,9 +158,14 @@ export function aggregateNinetyMinuteProbabilities(distribution) {
         .reduce((sum, entry) => sum + entry.probability, 0);
     return { homeWin90Prob, draw90Prob, awayWin90Prob };
 }
+const EXTRA_TIME_DECIDED_SHARE = 0.45;
 export function homeAdvanceAfterDrawProb(homeTeam, awayTeam) {
     const ratingDelta = (teamRating(homeTeam) - teamRating(awayTeam)) / 400;
-    return clamp(0.5 + ratingDelta * 0.22 + (homeTeam.isHost ? 0.03 : 0) - (awayTeam.isHost ? 0.03 : 0), 0.25, 0.75);
+    const hostDelta = (homeTeam.isHost ? 0.03 : 0) - (awayTeam.isHost ? 0.03 : 0);
+    // 两段式：加时段实力差仍然有效，点球段接近五五开。
+    const extraTimeWin = clamp(0.5 + ratingDelta * 0.18 + hostDelta, 0.3, 0.7);
+    const penaltyWin = clamp(0.5 + ratingDelta * 0.06, 0.4, 0.6);
+    return clamp(EXTRA_TIME_DECIDED_SHARE * extraTimeWin + (1 - EXTRA_TIME_DECIDED_SHARE) * penaltyWin, 0.25, 0.75);
 }
 export function drawWeightedScore(distribution, rng) {
     const pick = rng();

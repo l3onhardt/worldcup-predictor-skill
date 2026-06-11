@@ -146,6 +146,26 @@ test("audited snapshots reject incomplete or mixed strength versions", () => {
   );
 });
 
+test("dixon-coles rho is continuous in average lambda", () => {
+  const { scoreDistribution } = skillCore;
+  // 阶梯函数在档位边界会跳变；连续函数下相邻强度的 0-0 概率差应当很小
+  const base = { id: "A", name: "A", ratingValue: 1700 };
+  const nearLow = scoreDistribution({ ...base, goalsPerMatch: 0.92 }, { id: "B", name: "B", ratingValue: 1700, goalsPerMatch: 0.92 });
+  const nearHigh = scoreDistribution({ ...base, goalsPerMatch: 0.93 }, { id: "B", name: "B", ratingValue: 1700, goalsPerMatch: 0.93 });
+  const p00Low = nearLow.find((e) => e.home === 0 && e.away === 0).probability;
+  const p00High = nearHigh.find((e) => e.home === 0 && e.away === 0).probability;
+  assert.ok(Math.abs(p00Low - p00High) < 0.005);
+});
+
+test("knockout draw advancement is softer than pure rating projection", () => {
+  const strong = { id: "S", name: "Strong", ratingValue: 1950 };
+  const weak = { id: "W", name: "Weak", ratingValue: 1750 };
+  const probability = skillCore.homeAdvanceAfterDrawProb(strong, weak);
+  // 两段式建模：点球段接近五五开，整体应低于旧的 0.5 + delta*0.22 = 0.61
+  assert.ok(probability > 0.5);
+  assert.ok(probability < 0.61);
+});
+
 test("copied skill runs all three CLIs without the web app", () => {
   const tempRoot = mkdtempSync(join(tmpdir(), "worldcup-predictor-skill-"));
   const copiedSkill = join(tempRoot, "worldcup-predictor");
