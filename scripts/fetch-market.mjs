@@ -61,6 +61,7 @@ export function gammaEventToMarkets(event, options = {}) {
   const rawMarkets = Array.isArray(event?.markets) ? event.markets : [];
   if (rawMarkets.length === 0) throw new Error("Gamma event contains no markets.");
 
+  // 形态一：单一三向市场（outcomes 含 Draw）
   const threeWay = rawMarkets.find((market) => {
     const outcomes = parseJsonArray(market.outcomes);
     return outcomes.length === 3 && outcomes.some((name) => /draw/i.test(name));
@@ -82,22 +83,61 @@ export function gammaEventToMarkets(event, options = {}) {
 
   const binaries = rawMarkets.filter((market) => parseJsonArray(market.outcomes).length === 2);
   if (binaries.length === 0) throw new Error("Gamma event has no convertible markets.");
-  const outcomes = binaries.map((market) => {
+  const binaryOutcomes = binaries.map((market) => {
     const prices = parseJsonArray(market.outcomePrices).map(Number);
-    const yesPrice = prices[0];
-    return {
-      name: market.groupItemTitle || market.question || market.id,
-      label: market.groupItemTitle || market.question || market.id,
-      price: round(1 / yesPrice, 4),
-      impliedProb: round(yesPrice),
-    };
+    const title = market.groupItemTitle || market.question || String(market.id);
+    return { title, yesPrice: prices[0] };
   });
+
+  // 形态二：现代 Polymarket 单场结构——主胜/平/客胜各一个二元市场，按 YES 价组装 1x2
+  if (options.matchId && binaryOutcomes.length === 3) {
+    const drawEntry = binaryOutcomes.find((entry) => /draw/i.test(entry.title));
+    const homeEntry = options.home
+      ? binaryOutcomes.find((entry) => entry.title.toLowerCase().includes(options.home.toLowerCase()))
+      : undefined;
+    if (drawEntry && homeEntry) {
+      const awayEntry = binaryOutcomes.find((entry) => entry !== drawEntry && entry !== homeEntry);
+      const mapped = [
+        { name: "3", entry: homeEntry },
+        { name: "1", entry: drawEntry },
+        { name: "0", entry: awayEntry },
+      ].map(({ name, entry }) => ({
+        name,
+        label: entry.title,
+        price: round(1 / entry.yesPrice, 4),
+        impliedProb: round(entry.yesPrice),
+      }));
+      return [{ matchId: options.matchId, type: "1x2", outcomes: mapped }];
+    }
+  }
+
+  // 形态三：多结果 outright（冠军盘等）
+  const outcomes = binaryOutcomes.map((entry) => ({
+    name: entry.title,
+    label: entry.title,
+    price: round(1 / entry.yesPrice, 4),
+    impliedProb: round(entry.yesPrice),
+  }));
   return [{ marketId: event.slug ?? event.id, type: "outright", outcomes }];
 }
 
+async function fetchWithRetry(url, attempts = 3) {
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const response = await fetch(url, { headers: { "User-Agent": "worldcup-predictor-skill/0.4" } });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response;
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts) await new Promise((resolve) => setTimeout(resolve, attempt * 1500));
+    }
+  }
+  throw new Error(`Gamma API request failed after ${attempts} attempts: ${lastError?.message ?? lastError}`);
+}
+
 async function fetchGammaEvent(slug) {
-  const response = await fetch(`${GAMMA_BASE}/events?slug=${encodeURIComponent(slug)}`);
-  if (!response.ok) throw new Error(`Gamma API request failed: ${response.status}`);
+  const response = await fetchWithRetry(`${GAMMA_BASE}/events?slug=${encodeURIComponent(slug)}`);
   const events = await response.json();
   if (!Array.isArray(events) || events.length === 0) throw new Error(`No Gamma event found for slug: ${slug}`);
   return events[0];

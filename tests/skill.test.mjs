@@ -343,3 +343,22 @@ test("blend output always preserves the pure model column", () => {
   assert.ok(match.blended90Prob);
   assert.notDeepEqual(match.model90Prob, match.blended90Prob);
 });
+
+test("gamma match event with three binary markets assembles a 1x2 market", () => {
+  const event = {
+    slug: "fifwc-mex-rsa-2026-06-11",
+    markets: [
+      { id: "m1", groupItemTitle: "Mexico", outcomes: '["Yes","No"]', outcomePrices: '["0.685","0.315"]' },
+      { id: "m2", groupItemTitle: "Draw (Mexico vs. South Africa)", outcomes: '["Yes","No"]', outcomePrices: '["0.205","0.795"]' },
+      { id: "m3", groupItemTitle: "South Africa", outcomes: '["Yes","No"]', outcomePrices: '["0.105","0.895"]' },
+    ],
+  };
+  const markets = gammaEventToMarkets(event, { matchId: "sample-group-a-1", home: "Mexico", away: "South Africa" });
+  assert.equal(markets.length, 1);
+  assert.equal(markets[0].type, "1x2");
+  assert.equal(markets[0].matchId, "sample-group-a-1");
+  const byName = Object.fromEntries(markets[0].outcomes.map((outcome) => [outcome.name, outcome]));
+  assert.ok(Math.abs(byName["3"].impliedProb - 0.685) < 1e-9);
+  assert.ok(Math.abs(byName["1"].impliedProb - 0.205) < 1e-9);
+  assert.ok(Math.abs(byName["0"].impliedProb - 0.105) < 1e-9);
+});
