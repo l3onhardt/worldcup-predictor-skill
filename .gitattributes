@@ -1,0 +1,4 @@
+# core/ 的哈希清单依赖字节级稳定，强制 LF 防止 autocrlf 在不同环境改写文件。
+*.mjs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
