@@ -1,0 +1,19 @@
+{
+  "sources": {
+    "elo-ratings": {
+      "ttlHours": 24,
+      "lastFetchedAt": "2026-06-11T11:50:10.672Z",
+      "contentHash": "3d7af9861a06eccd2c1f69e115a0db514adc0068b6c86626f1e85dd5714cda53"
+    },
+    "fifa-ranking": {
+      "ttlHours": 168,
+      "lastFetchedAt": null,
+      "contentHash": null
+    },
+    "football-data": {
+      "ttlHours": 1,
+      "lastFetchedAt": null,
+      "contentHash": null
+    }
+  }
+}
