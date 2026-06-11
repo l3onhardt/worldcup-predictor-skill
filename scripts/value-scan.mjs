@@ -16,12 +16,14 @@ import {
 } from "../core/index.mjs";
 import { round } from "../core/utils.mjs";
 import { auditSnapshot, fail, parseArgs, readJson } from "./audit-input.mjs";
+import { verifyCommit } from "./blind-commit.mjs";
 import { auditMarketSnapshot, marketAgeHours } from "./market-input.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const defaultDataPath = resolve(scriptDir, "../assets/sample-data/worldcup-2026.json");
+const defaultBlindLogPath = resolve(scriptDir, "../logs/blind-commits.jsonl");
 const usage =
-  "Usage: node scripts/value-scan.mjs --market <market-snapshot.json> [--data <audited-snapshot.json>] [--weight 0.7] [--devig power|proportional] [--threshold 0.05] [--max-age-hours 24]";
+  "Usage: node scripts/value-scan.mjs --market <market-snapshot.json> [--data <audited-snapshot.json>] [--weight 0.7] [--devig power|proportional] [--threshold 0.05] [--max-age-hours 24] [--blind-log <jsonl>] [--require-blind-commit]";
 const labels = ["3", "1", "0"];
 const args = parseArgs(process.argv.slice(2));
 
@@ -58,6 +60,17 @@ try {
       contextAdjustments: snapshot.contextAdjustments,
     });
     const modelProbs = [prediction.homeWin90Prob, prediction.draw90Prob, prediction.awayWin90Prob];
+    const blindLogPath = args["blind-log"] || defaultBlindLogPath;
+    const blindCommit = verifyCommit(
+      blindLogPath,
+      state.matchId,
+      snapshot.metadata.dataVersion,
+      { "3": prediction.homeWin90Prob, "1": prediction.draw90Prob, "0": prediction.awayWin90Prob },
+      marketSnapshot.fetchedAt,
+    );
+    if (args["require-blind-commit"] && !blindCommit.verified) {
+      throw new Error(`blind commit required but not verified for ${state.matchId}: ${blindCommit.note}`);
+    }
     const orderedOutcomes = labels.map((name) => {
       const outcome = market.outcomes.find((entry) => entry.name === name);
       if (!outcome) throw new Error(`Market ${market.matchId} is missing outcome ${name}.`);
@@ -72,6 +85,7 @@ try {
       homeTeam: homeTeam.name,
       awayTeam: awayTeam.name,
       resultScope: "90minResult",
+      blindCommit,
       overround: market.overround,
       model90Prob: Object.fromEntries(labels.map((name, index) => [name, round(modelProbs[index])])),
       market90Prob: Object.fromEntries(labels.map((name, index) => [name, round(marketProbs[index])])),
