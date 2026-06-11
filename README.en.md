@@ -42,6 +42,10 @@ Use worldcup-predictor to explain why the model favors this team.
 Use worldcup-predictor with my 14-match JSON and organize a 3/1/0 entertainment reference list.
 Use worldcup-predictor to make a conservative win/draw/loss list, not betting advice.
 Use worldcup-predictor to rank these matches by risk level.
+Use worldcup-predictor: how should I read the -0.5 Asian handicap on this match?
+Use worldcup-predictor: what is the fair probability for over 2.5 goals?
+Use worldcup-predictor to compare the model's probabilities with Polymarket.
+Use worldcup-predictor to scan these odds for value against the model.
 ```
 
 ## Capabilities
@@ -51,6 +55,9 @@ Use worldcup-predictor to rank these matches by risk level.
 - Continue a 2026 World Cup simulation from completed results without overwriting them.
 - Report qualification, knockout-path, and World Cup champion probabilities.
 - Generate China football lottery 3/1/0 entertainment reference lists from `90minResult`.
+- Price Asian handicaps (with quarter-line splits), all over/under lines, and BTTS from the same score matrix.
+- Build market snapshots from Polymarket or manual bookmaker odds, devig them, and blend with model probabilities (market weight 0.7 by default).
+- Report model-vs-market divergence, EV, and quarter-Kelly analysis references (not betting advice).
 - Keep `90minResult` and `advanceResult` strictly separate.
 - Ignore unreviewed LLM-extracted context adjustments.
 
@@ -84,6 +91,19 @@ node scripts/generate-lottery-slip.mjs \
   --issue assets/sample-data/lottery-issue.json \
   --strategy balanced \
   --budget 288
+
+# Full market book (Asian handicap / over-under / BTTS)
+node scripts/predict-markets.mjs \
+  --data assets/sample-data/worldcup-2026.json \
+  --home MEX --away KOR
+
+# Market snapshot (manual odds or Polymarket)
+node scripts/fetch-market.mjs --manual my-odds.json --out market.json
+
+# Value scan: devig, blend, divergence, EV/Kelly
+node scripts/value-scan.mjs \
+  --data assets/sample-data/worldcup-2026.json \
+  --market assets/sample-data/market-snapshot.json
 ```
 
 Every command writes JSON to standard output for further processing by agents, scripts, or applications.
@@ -104,6 +124,7 @@ Detailed references:
 - [`references/data-schema.md`](references/data-schema.md)
 - [`references/official-data-sources.md`](references/official-data-sources.md)
 - [`references/model-methodology.md`](references/model-methodology.md)
+- [`references/market-methodology.md`](references/market-methodology.md)
 - [`references/tournament-rules.md`](references/tournament-rules.md)
 - [`references/lottery-rules.md`](references/lottery-rules.md)
 
@@ -131,9 +152,9 @@ npm test
 npm run smoke
 ```
 
-- `npm test` verifies input auditing, result scopes, completed-result locking, bundled-core hashes, and standalone CLIs.
-- `npm run smoke` executes all three CLIs with bundled samples.
-- `core/` is a deterministic snapshot generated from the upstream `packages/prediction-core`; do not edit it manually.
+- `npm test` verifies input auditing, result scopes, completed-result locking, bundled-core hashes, market math, and standalone CLIs.
+- `npm run smoke` executes all bundled CLIs with sample data.
+- `core/` is the source of truth for prediction-core and is iterated in this repository; run `npm run update-core-manifest` after changing it.
 
 Bundled samples exist only for demonstrations and tests. They are not official schedules, real team-strength data, or actual prediction conclusions. `assets/official-sources.json` contains only source metadata; it does not include official scrape results, CSV files, images, PDFs, or live feeds.
 

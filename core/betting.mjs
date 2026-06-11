@@ -1,4 +1,5 @@
-// Generated from packages/prediction-core. Run pnpm skill:sync-core to refresh.
+// prediction-core v0.3.0 — maintained in this repository (worldcup-predictor-skill).
+import { DEFAULT_MARKET_WEIGHT, blendProbabilities } from "./odds.mjs";
 import { round } from "./utils.mjs";
 const labelOrder = ["3", "1", "0"];
 const labelToResult = {
@@ -12,6 +13,20 @@ const labelToText = {
     "0": "客胜",
 };
 const defaultDisclaimer = "本工具仅提供基于公开数据和数学模型的赛事分析、模拟结果和清单整理，不构成任何购彩、投资或收益建议。请遵守当地法律法规，理性参与中国体育彩票，未成年人禁止参与。";
+function withBlendedProbabilities(match, marketWeight) {
+    const market = match.market310;
+    if (!market || !["3", "1", "0"].every((label) => Number.isFinite(market[label]))) {
+        return { ...match, probabilitySource: "model_only" };
+    }
+    const blended = blendProbabilities([market["3"], market["1"], market["0"]], [Number(match.homeWin90Prob), Number(match.draw90Prob), Number(match.awayWin90Prob)], marketWeight);
+    return {
+        ...match,
+        homeWin90Prob: blended[0],
+        draw90Prob: blended[1],
+        awayWin90Prob: blended[2],
+        probabilitySource: "blended",
+    };
+}
 function probabilityMap(match) {
     return {
         "3": Number(match.homeWin90Prob),
@@ -97,6 +112,7 @@ function buildSelection(match, strategy) {
         homeCode: match.homeCode,
         awayCode: match.awayCode,
         resultScope: "90minResult",
+        probabilitySource: match.probabilitySource ?? "model_only",
         probabilities: {
             "3": round(match.homeWin90Prob),
             "1": round(match.draw90Prob),
@@ -176,7 +192,8 @@ export function generateBettingSlip(input) {
         throw new Error("issue.matches must contain at least 9 matches.");
     }
     const maxStake = input.budget ? Math.max(1, Math.floor(input.budget / unitStake)) : Number.POSITIVE_INFINITY;
-    const selections = trimToBudget(input.issue.matches.map((match) => buildSelection(match, strategy)), maxStake);
+    const marketWeight = input.marketWeight ?? DEFAULT_MARKET_WEIGHT;
+    const selections = trimToBudget(input.issue.matches.map((match) => buildSelection(withBlendedProbabilities(match, marketWeight), strategy)), maxStake);
     const fullStakeCount = stakeCount(selections);
     const bankerMatches = selections
         .filter((selection) => selection.label310.length === 1 && selection.riskTag === "low")
@@ -190,6 +207,7 @@ export function generateBettingSlip(input) {
         dataVersion: input.issue.dataVersion,
         generatedAt: input.generatedAt ?? new Date().toISOString(),
         strategy,
+        marketWeight: input.issue.matches.some((match) => match.market310) ? marketWeight : undefined,
         budget: input.budget,
         unitStake,
         riskLevel: strategy,

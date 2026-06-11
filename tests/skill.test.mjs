@@ -13,6 +13,8 @@ import {
   dataVersionFromSources,
   reviewedContextAdjustments,
 } from "../scripts/audit-input.mjs";
+import { auditMarketSnapshot } from "../scripts/market-input.mjs";
+import { gammaEventToMarkets, manualToSnapshot } from "../scripts/fetch-market.mjs";
 
 const skillDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -146,7 +148,27 @@ test("audited snapshots reject incomplete or mixed strength versions", () => {
   );
 });
 
-test("copied skill runs all three CLIs without the web app", () => {
+test("dixon-coles rho is continuous in average lambda", () => {
+  const { scoreDistribution } = skillCore;
+  // 阶梯函数在档位边界会跳变；连续函数下相邻强度的 0-0 概率差应当很小
+  const base = { id: "A", name: "A", ratingValue: 1700 };
+  const nearLow = scoreDistribution({ ...base, goalsPerMatch: 0.92 }, { id: "B", name: "B", ratingValue: 1700, goalsPerMatch: 0.92 });
+  const nearHigh = scoreDistribution({ ...base, goalsPerMatch: 0.93 }, { id: "B", name: "B", ratingValue: 1700, goalsPerMatch: 0.93 });
+  const p00Low = nearLow.find((e) => e.home === 0 && e.away === 0).probability;
+  const p00High = nearHigh.find((e) => e.home === 0 && e.away === 0).probability;
+  assert.ok(Math.abs(p00Low - p00High) < 0.005);
+});
+
+test("knockout draw advancement is softer than pure rating projection", () => {
+  const strong = { id: "S", name: "Strong", ratingValue: 1950 };
+  const weak = { id: "W", name: "Weak", ratingValue: 1750 };
+  const probability = skillCore.homeAdvanceAfterDrawProb(strong, weak);
+  // 两段式建模：点球段接近五五开，整体应低于旧的 0.5 + delta*0.22 = 0.61
+  assert.ok(probability > 0.5);
+  assert.ok(probability < 0.61);
+});
+
+test("copied skill runs all bundled CLIs without the web app", () => {
   const tempRoot = mkdtempSync(join(tmpdir(), "worldcup-predictor-skill-"));
   const copiedSkill = join(tempRoot, "worldcup-predictor");
   cpSync(skillDir, copiedSkill, { recursive: true });
@@ -154,6 +176,8 @@ test("copied skill runs all three CLIs without the web app", () => {
   try {
     const commands = [
       ["scripts/predict-match.mjs", "--home", "MEX", "--away", "KOR"],
+      ["scripts/predict-markets.mjs", "--home", "MEX", "--away", "KOR"],
+      ["scripts/value-scan.mjs", "--market", "assets/sample-data/market-snapshot.json"],
       ["scripts/simulate-tournament.mjs", "--simulations", "2", "--seed", "standalone"],
       ["scripts/generate-lottery-slip.mjs", "--strategy", "balanced", "--budget", "288"],
     ];
@@ -168,4 +192,127 @@ test("copied skill runs all three CLIs without the web app", () => {
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
   }
+});
+
+test("market snapshot audit accepts valid input and rejects bad prices", () => {
+  const valid = auditMarketSnapshot(readSample("market-snapshot.json"));
+  assert.equal(valid.markets[0].type, "1x2");
+  assert.ok(valid.markets[0].overround > 1);
+  assert.throws(
+    () => auditMarketSnapshot({ source: "manual", fetchedAt: "2026-06-04T12:00:00.000Z", markets: [{ matchId: "x", type: "1x2", outcomes: [{ name: "3", price: 0.9 }, { name: "0", price: 2 }] }] }),
+    /price/,
+  );
+  assert.throws(() => auditMarketSnapshot({ source: "manual", markets: [] }), /fetchedAt/);
+});
+
+test("manual odds convert to a market snapshot with implied probabilities", () => {
+  const snapshot = manualToSnapshot({
+    fetchedAt: "2026-06-04T12:00:00.000Z",
+    matches: [
+      {
+        matchId: "sample-group-a-1",
+        homeName: "Mexico",
+        awayName: "South Korea",
+        odds: { "3": 2.3, "1": 3.2, "0": 3.1 },
+      },
+    ],
+  });
+  assert.equal(snapshot.source, "manual");
+  const market = snapshot.markets[0];
+  assert.equal(market.type, "1x2");
+  const homeOutcome = market.outcomes.find((outcome) => outcome.name === "3");
+  assert.ok(Math.abs(homeOutcome.impliedProb - 1 / 2.3) < 1e-4);
+});
+
+test("gamma outright event transforms into one outright market", () => {
+  const event = {
+    slug: "2026-fifa-world-cup-winner",
+    markets: [
+      { id: "m1", groupItemTitle: "France", outcomes: '["Yes","No"]', outcomePrices: '["0.18","0.82"]' },
+      { id: "m2", groupItemTitle: "Brazil", outcomes: '["Yes","No"]', outcomePrices: '["0.15","0.85"]' },
+    ],
+  };
+  const markets = gammaEventToMarkets(event);
+  assert.equal(markets.length, 1);
+  assert.equal(markets[0].type, "outright");
+  assert.equal(markets[0].outcomes.length, 2);
+  assert.ok(Math.abs(markets[0].outcomes[0].impliedProb - 0.18) < 1e-9);
+  assert.ok(markets[0].outcomes[0].price > 5.5);
+});
+
+test("value scan blends devigged market with model and reports divergence", () => {
+  const result = spawnSync(
+    process.execPath,
+    ["scripts/value-scan.mjs", "--market", "assets/sample-data/market-snapshot.json"],
+    { cwd: skillDir, encoding: "utf8" },
+  );
+  assert.equal(result.status, 0, result.stderr);
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.fallback, undefined);
+  assert.equal(report.matches.length, 1);
+  const match = report.matches[0];
+  assert.equal(match.resultScope, "90minResult");
+  const blendedSum = match.blended90Prob["3"] + match.blended90Prob["1"] + match.blended90Prob["0"];
+  assert.ok(Math.abs(blendedSum - 1) < 1e-6);
+  assert.equal(match.divergence.length, 3);
+  for (const outcome of match.valueMetrics) {
+    assert.ok(Number.isFinite(outcome.ev));
+    assert.ok(outcome.kellyFraction >= 0 && outcome.kellyFraction <= 0.1);
+  }
+  assert.ok(typeof report.marketAgeHours === "number");
+});
+
+test("predict-match with --market blends probabilities and stays unchanged without it", () => {
+  const plain = spawnSync(
+    process.execPath,
+    ["scripts/predict-match.mjs", "--home", "MEX", "--away", "KOR", "--match", "sample-group-a-1"],
+    { cwd: skillDir, encoding: "utf8" },
+  );
+  const withMarket = spawnSync(
+    process.execPath,
+    [
+      "scripts/predict-match.mjs", "--home", "MEX", "--away", "KOR", "--match", "sample-group-a-1",
+      "--market", "assets/sample-data/market-snapshot.json",
+    ],
+    { cwd: skillDir, encoding: "utf8" },
+  );
+  assert.equal(plain.status, 0, plain.stderr);
+  assert.equal(withMarket.status, 0, withMarket.stderr);
+  const plainResult = JSON.parse(plain.stdout);
+  const marketResult = JSON.parse(withMarket.stdout);
+  assert.equal(plainResult.marketBlend, undefined);
+  assert.ok(marketResult.marketBlend);
+  assert.equal(marketResult.marketBlend.fallback, undefined);
+  // 不带 --market 的字段保持完全不变
+  assert.equal(marketResult.homeWin90Prob, plainResult.homeWin90Prob);
+  const sum =
+    marketResult.marketBlend.blended90Prob["3"] +
+    marketResult.marketBlend.blended90Prob["1"] +
+    marketResult.marketBlend.blended90Prob["0"];
+  assert.ok(Math.abs(sum - 1) < 1e-6);
+});
+
+test("lottery slip without market data is identical to model-only behaviour", () => {
+  const issue = readSample("lottery-issue.json");
+  const slip = skillCore.generateBettingSlip({ issue, strategy: "balanced", generatedAt: issue.generatedAt });
+  for (const selection of slip.selections) {
+    assert.equal(selection.probabilitySource, "model_only");
+  }
+});
+
+test("lottery slip blends market310 probabilities when present", () => {
+  const issue = readSample("lottery-issue.json");
+  const blendedIssue = {
+    ...issue,
+    matches: issue.matches.map((match, index) =>
+      index === 0
+        ? { ...match, market310: { "3": 0.55, "1": 0.25, "0": 0.2 } }
+        : match,
+    ),
+  };
+  const slip = skillCore.generateBettingSlip({ issue: blendedIssue, strategy: "balanced", generatedAt: issue.generatedAt });
+  const first = slip.selections.find((selection) => selection.matchId === issue.matches[0].matchId);
+  assert.equal(first.probabilitySource, "blended");
+  // market 0.55 / model 0.38, weight 0.7 → 0.7*0.55 + 0.3*0.38 = 0.499
+  assert.ok(Math.abs(first.probabilities["3"] - 0.499) < 1e-3);
 });

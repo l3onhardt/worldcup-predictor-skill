@@ -1,4 +1,4 @@
-// Generated from packages/prediction-core. Run pnpm skill:sync-core to refresh.
+// prediction-core v0.3.0 — maintained in this repository (worldcup-predictor-skill).
 export function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
 }

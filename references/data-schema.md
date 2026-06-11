@@ -59,3 +59,30 @@ Only these adjustments may affect calculations:
 - `derivation: "deterministic_rule"` with a non-empty `ruleVersion`
 
 `llm_extraction` entries are always ignored.
+
+## Market Snapshot Schema
+
+`scripts/fetch-market.mjs` 产出、`--market` 参数消费的市场快照：
+
+```json
+{
+  "source": "polymarket | manual",
+  "fetchedAt": "2026-06-04T12:00:00.000Z",
+  "markets": [
+    {
+      "matchId": "sample-group-a-1",
+      "type": "1x2 | ah | ou | outright",
+      "line": 2.5,
+      "outcomes": [
+        { "name": "3", "label": "Mexico", "price": 2.3, "impliedProb": 0.4348 }
+      ]
+    }
+  ]
+}
+```
+
+- `price` 为小数赔率（>1）；`impliedProb` 缺省时按 1/price 推得。
+- `1x2` 盘口的 outcome `name` 固定为 `"3" | "1" | "0"`。
+- `outright` 盘口用 `marketId` 代替 `matchId`。
+- 市场快照不进入 `metadata.sourceVersions`，不改变 `dataVersion`；
+  它是融合层输入，原始模型概率始终单独保留输出。

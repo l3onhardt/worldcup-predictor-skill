@@ -1,14 +1,15 @@
 # Model Methodology
 
-The bundled core is generated from `prediction-core v0.2.0`.
+The bundled core is `prediction-core v0.3.0` (maintained in this repository).
 
 ## Match Prediction
 
 - Strength priority: `ratingValue`, legacy `eloRating`, FIFA rank fallback, then neutral fallback.
 - Expected goals use strength difference, reviewed form, and audited attack/defense values.
 - Scoreline probabilities use Poisson distributions with a Dixon-Coles low-score correction.
+- Dixon-Coles rho is a continuous linear function of average expected goals.
 - Host advantage applies only when the match venue country matches the team country.
-- Knockout 90-minute draws use a strength-weighted advancement fallback.
+- Knockout 90-minute draws use a two-stage extra-time/penalty advancement model.
 
 ## Tournament Simulation
 
@@ -24,3 +25,9 @@ The bundled core is generated from `prediction-core v0.2.0`.
 - Form and scoring statistics should only be enabled after the configured evidence threshold is met.
 - Official facts, weather, squads, and news do not modify probability by themselves.
 - LLMs may extract or explain facts but never calculate or silently adjust probabilities.
+
+## Market Integration
+
+- Market snapshots are optional inputs; see `references/market-methodology.md`.
+- Blended probabilities never replace model output; both are always reported.
+- EV and fractional Kelly are analysis references only, never betting advice.
