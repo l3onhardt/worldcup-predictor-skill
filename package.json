@@ -1,6 +1,6 @@
 {
   "name": "worldcup-predictor-skill",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A deterministic World Cup prediction Agent Skill with audited offline inputs, market odds blending, and multi-market fair pricing.",
   "type": "module",
   "private": false,

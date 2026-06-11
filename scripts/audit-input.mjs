@@ -133,6 +133,11 @@ export function auditSnapshot(snapshot) {
   }
   for (const [source, version] of Object.entries(metadata.sourceVersions)) {
     requiredString(version, `metadata.sourceVersions.${source}`);
+    if (/polymarket|odds|market|betting/i.test(source)) {
+      throw new Error(
+        `metadata.sourceVersions must not contain "${source}": market data must stay in the market pipeline (market snapshots), never in fundamental prediction inputs.`,
+      );
+    }
   }
   if ("strength" in metadata.sourceVersions) {
     throw new Error("metadata.sourceVersions must not contain strength; use metadata.strengthSnapshotVersion.");

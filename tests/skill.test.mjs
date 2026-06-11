@@ -316,3 +316,30 @@ test("lottery slip blends market310 probabilities when present", () => {
   // market 0.55 / model 0.38, weight 0.7 → 0.7*0.55 + 0.3*0.38 = 0.499
   assert.ok(Math.abs(first.probabilities["3"] - 0.499) < 1e-3);
 });
+
+test("firewall: market-like sources are rejected from fundamental sourceVersions", () => {
+  const snapshot = readSample("worldcup-2026.json");
+  for (const bad of ["polymarket", "betting-odds", "market-snapshot"]) {
+    const polluted = {
+      ...snapshot,
+      metadata: {
+        ...snapshot.metadata,
+        sourceVersions: { ...snapshot.metadata.sourceVersions, [bad]: "hash" },
+      },
+    };
+    assert.throws(() => auditSnapshot(polluted), /market data must stay in the market pipeline/i, bad);
+  }
+});
+
+test("blend output always preserves the pure model column", () => {
+  const result = spawnSync(
+    process.execPath,
+    ["scripts/value-scan.mjs", "--market", "assets/sample-data/market-snapshot.json"],
+    { cwd: skillDir, encoding: "utf8" },
+  );
+  assert.equal(result.status, 0, result.stderr);
+  const match = JSON.parse(result.stdout).matches[0];
+  assert.ok(match.model90Prob);
+  assert.ok(match.blended90Prob);
+  assert.notDeepEqual(match.model90Prob, match.blended90Prob);
+});
