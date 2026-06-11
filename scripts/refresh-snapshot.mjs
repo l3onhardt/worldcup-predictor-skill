@@ -144,7 +144,7 @@ const ADAPTERS = [
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  if (args.help || !args.base) fail("Missing required --base argument.", usage);
+  if (args.help || (!args.base && !args.check)) fail("Missing required --base argument.", usage);
   const manifestPath = args.manifest || defaultManifestPath;
   const nowIso = new Date().toISOString();
   let manifest = readJson(manifestPath);
