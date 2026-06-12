@@ -1,15 +1,35 @@
-# World Cup Predictor Skill: 2026 World Cup Predictions And Simulation
+# World Cup Prediction Market Research Assistant: Probability Analysis & Risk Management Skill
 
-[中文说明](README.md)
+[中文说明](README.md) | [Quick Reference](docs/QUICK-REFERENCE.md) | [Optimization Notes](docs/SKILL-OPTIMIZATION-SUMMARY.md)
 
-World Cup Predictor is an Agent Skill for Codex, Claude Code, and compatible environments. It uses audited offline snapshots and a bundled deterministic core to calculate 2026 World Cup predictions, 90-minute win/draw/loss probabilities, tournament simulations, champion probabilities, and cautious China football lottery 3/1/0 reference lists.
+## ⚠️ Important Notice
 
-**In one sentence**: give an agent audited match data, and it can explain which side is more likely to win, draw, or lose in 90 minutes, then simulate who has the best path to the title.
-**Best for**: checking a World Cup match before kickoff, building a 2026 World Cup simulator, explaining champion probabilities, or adding win/draw/loss analysis to Codex / Claude Code.
-**Not for**: bundled official data packages, automatic live-score/news/odds/official-data scraping, betting advice, return promises, or official endorsement.
-**Chinese display name**: 世界杯预测机. The internal skill name remains `worldcup-predictor`.
+**What this is**: an educational probability-analysis tool, a risk-management research framework, and a prediction-market methodology demo.
 
-The 2026 World Cup uses the expanded 48-team, 12-group, 104-match format. This repository only works with audited offline data and does not depend on Next.js, databases, live scraping, or LLM-generated probabilities. LLMs may explain outputs, but they must not replace deterministic rules or calculations.
+**What this is NOT**: investment advice, betting instructions, a guaranteed-return algorithm, or a gambling agent.
+
+All outputs are educational examples and research references. Users must make their own decisions, bear their own risk, and comply with local laws and regulations.
+
+## Positioning
+
+World Cup Prediction Market Research Assistant is an Agent Skill for Codex, Claude Code, and compatible environments. It uses audited offline snapshots and a bundled deterministic core to produce structured research reports: implied-probability calculations, model-vs-market value divergence, risk-factor breakdowns, scenario analysis, and educational capital-allocation examples (conservative / neutral / aggressive).
+
+**In one sentence**: give an agent audited match data (and optionally market odds), and it returns a transparent research report — probabilities, expected value, risk exposure, worst cases, and uncertainty — never a betting instruction.
+
+**Best for**: learning probability analysis and risk-management methodology, understanding how prediction markets price outcomes, systematically evaluating uncertainty, or adding structured win/draw/loss research to Codex / Claude Code.
+
+**Not for**: anyone looking for "sure wins" (they do not exist), anyone who wants the AI to decide for them (the decision is yours), anyone using borrowed money or money they cannot afford to lose, or anyone in a jurisdiction where such activities are restricted.
+
+**Core principles**:
+- 🔬 **Probability first**: everything rests on probability theory and statistics, not intuition
+- 🛡️ **Risk first**: conservative defaults, hard exposure caps, mandatory warnings
+- 📖 **Education first**: every output is a teaching example, not an action instruction
+- 🔍 **Transparency first**: all formulas, assumptions, and limitations are disclosed
+- 👤 **Autonomy first**: the user's independent judgment is respected; the skill never decides
+
+**Chinese display name**: 世界杯预测市场研究助手 (formerly 世界杯预测机). The internal skill name remains `worldcup-predictor`.
+
+The 2026 World Cup uses the expanded 48-team, 12-group, 104-match format. This repository only works with audited offline data and does not depend on Next.js, databases, live scraping, or LLM-generated probabilities. LLMs may explain outputs and present the research framework, but they must not replace deterministic rules or calculations — and they must never promise returns.
 
 ## Start In 30 Seconds
 
@@ -30,47 +50,93 @@ Claude Code users can clone the repository into `~/.claude/skills/worldcup-predi
 Natural example requests after installation:
 
 ```text
-Use worldcup-predictor: who is more likely to win, France or Brazil?
+# Basic probability analysis
+Use worldcup-predictor to analyze France vs Brazil probabilities.
 Use worldcup-predictor to analyze this match's 90-minute win/draw/loss chances.
-Use worldcup-predictor: is there an upset risk in this match?
 Use worldcup-predictor to show the most likely scorelines.
+Use worldcup-predictor to explain why the model favors this team.
+
+# Market value research
+Use worldcup-predictor to compare the model's probabilities with Polymarket.
+Use worldcup-predictor to scan these odds for divergence against the model.
+Use worldcup-predictor to compute implied probabilities and devigged fair probabilities.
+Use worldcup-predictor: what is the fair probability for the -0.5 Asian handicap?
+
+# Risk assessment and scenario analysis
+Use worldcup-predictor for a full risk-analysis research report.
+Use worldcup-predictor: compare conservative/neutral/aggressive allocation examples for a 2000-unit budget.
+Use worldcup-predictor: what are the main risk factors in this match?
+Use worldcup-predictor: what is the worst-case loss in each scenario?
+
+# Tournament simulation
 Use worldcup-predictor to simulate 2026 World Cup champion probabilities.
 Use worldcup-predictor: which teams are most likely to reach the quarter-finals?
-Use worldcup-predictor: who is more likely to qualify from this group?
 Use worldcup-predictor to continue the knockout bracket from current results.
-Use worldcup-predictor to explain why the model favors this team.
-Use worldcup-predictor with my 14-match JSON and organize a 3/1/0 entertainment reference list.
-Use worldcup-predictor to make a conservative win/draw/loss list, not betting advice.
+
+# Lottery reference analysis (educational)
+Use worldcup-predictor with my 14-match JSON to analyze the 3/1/0 probability distribution.
+Use worldcup-predictor to make a conservative reference analysis — not betting advice.
 Use worldcup-predictor to rank these matches by risk level.
-Use worldcup-predictor: how should I read the -0.5 Asian handicap on this match?
-Use worldcup-predictor: what is the fair probability for over 2.5 goals?
-Use worldcup-predictor to compare the model's probabilities with Polymarket.
-Use worldcup-predictor to scan these odds for value against the model.
 ```
+
+**Note**: the agent will first state that this is a research tool (not investment advice), then confirm data sources, budget range, and risk preference before producing a structured report.
 
 ## Capabilities
 
+### Probability Analysis
 - Audit structured offline inputs and reject incomplete or mixed-version data.
 - Calculate 90-minute win, draw, and loss probabilities, expected goals, and likely scorelines.
-- Continue a 2026 World Cup simulation from completed results without overwriting them.
-- Report qualification, knockout-path, and World Cup champion probabilities.
-- Generate China football lottery 3/1/0 entertainment reference lists from `90minResult`.
+- Keep `90minResult` and `advanceResult` strictly separate.
 - Price Asian handicaps (with quarter-line splits), all over/under lines, and BTTS from the same score matrix.
-- Build market snapshots from Polymarket or manual bookmaker odds, devig them, and blend with model probabilities (market weight 0.7 by default).
-- Report model-vs-market divergence, EV, and quarter-Kelly analysis references (not betting advice).
-- Refresh fundamental snapshots on TTL (World Elo / FIFA ranking / football-data results) with quality gates that keep previous values on failure.
+
+### Market Research
+- Build market snapshots from Polymarket or manual bookmaker odds.
+- Devig with the power method to remove bookmaker margin and recover fair implied probabilities.
+- Blend model and market probabilities (market weight 0.7 by default), always reporting both columns.
+- Report model-vs-market divergence with |Δ| ≥ 5pp flags.
+- Compute EV and fractional Kelly as **analysis references only — never betting advice**.
+
+### Risk Management
+- 8-section structured research report: data summary, implied probabilities, subjective assessment, value divergence, risk factors, scenario analysis, allocation examples, and research conclusions.
+- Conservative / neutral / aggressive scenario comparison with best case, worst case, and drawdown.
+- Hard exposure caps: single position ≤ 10%, total exposure ≤ 30% (stricter defaults available).
+- Mandatory warnings on over-limit requests, loss-chasing, borrowed funds, and stale data.
+
+### Data Independence
 - Blind commits: hash model probabilities to disk before touching market prices, with verifiable time order proving independence.
 - Audit firewall: market-like sources (polymarket/odds/betting) are rejected from fundamental snapshots.
-- Keep `90minResult` and `advanceResult` strictly separate.
+- Market snapshots never modify `dataVersion`; blended and pure-model probabilities are always reported together.
+- Refresh fundamental snapshots on TTL (World Elo / FIFA ranking / football-data results) with quality gates that keep previous values on failure.
+
+### Tournament Simulation
+- Continue a 2026 World Cup simulation from completed results without overwriting them.
+- Report qualification, knockout-path, and World Cup champion probabilities.
+- Deterministic seeded Monte Carlo (default 10000 runs), fully reproducible.
+
+### Educational Reference
+- Analyze China football lottery 3/1/0 probability distributions from `90minResult`, clearly labelled as educational reference, never purchasing advice.
 - Ignore unreviewed LLM-extracted context adjustments.
 
 ## Not For
 
+### Technical boundaries
 - Live scores, news, odds, or official-data scraping.
-- Real purchasing, proxy buying, payments, rebates, or return promises.
-- Treating knockout advancement probability as 90-minute win probability.
 - Asking an LLM to invent missing facts or calculate probabilities.
+- Treating knockout advancement probability as 90-minute win probability.
 - Shipping unauthorized FIFA marks, team crests, or commercial data assets.
+
+### Positioning boundaries
+- Investment advice, purchasing advice, or return promises of any kind.
+- Deciding for the user, or claiming "sure win" / "guaranteed profit".
+- Encouraging over-budget stakes, borrowed funds, loss-chasing, or all-in behaviour.
+- Claiming official endorsement, insider information, or exclusive algorithms.
+- Hiding model limitations, missing data, or uncertainty.
+
+### Compliance boundaries
+- Real purchasing, proxy buying, payments, or rebates.
+- Circumventing local laws or encouraging illegal activity.
+- Serving minors with prediction-market content.
+- Continuing analysis when problem-gambling signals appear (the skill suggests professional help instead).
 
 ## CLI Examples
 
@@ -182,7 +248,7 @@ Changes to probability formulas, tournament rules, or 3/1/0 scopes must include 
 
 ## Disclaimer
 
-This tool only provides public-data analysis, mathematical simulations, and list organization for entertainment reference. It is not purchasing, investment, or return advice. Follow applicable laws and regulations. Minors must not participate in China sports lottery activities.
+This tool only provides public-data analysis, mathematical simulations, risk-management education, and reference organization. All allocation figures are educational examples demonstrating probability-based decision frameworks. It is not purchasing, investment, or return advice; prediction markets and sports outcomes are highly uncertain, and historical data cannot guarantee future results. Follow applicable laws and regulations. Minors must not participate in China sports lottery activities. If gambling stops being entertainment, seek professional help.
 
 ## License
 

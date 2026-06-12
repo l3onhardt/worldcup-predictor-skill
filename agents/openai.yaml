@@ -1,4 +1,4 @@
 interface:
-  display_name: "世界杯预测机"
-  short_description: "预测世界杯胜平负与冠军概率"
-  default_prompt: "使用 $worldcup-predictor 帮我分析一场世界杯比赛的 90 分钟胜平负，并说明模型依据和不确定性。"
+  display_name: "世界杯预测市场研究助手"
+  short_description: "世界杯概率分析、市场价值研究与风险评估（教育性研究工具，非投注建议）"
+  default_prompt: "使用 $worldcup-predictor 帮我分析一场世界杯比赛：给出 90 分钟胜平负概率、与市场隐含概率的差异、主要风险因素和不确定性说明。这是研究分析，不是投注建议。"
