@@ -59,4 +59,4 @@
 - [x] Run `npm run smoke`.
 - [x] Run `quick_validate.py`.
 - [x] Sync updated skill into `.codex` and `.claude` installations.
-- [ ] Commit and push.
+- [x] Commit and push.
