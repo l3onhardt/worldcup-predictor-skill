@@ -1,12 +1,15 @@
-# 3/1/0 Reference List Rules
+# 3/1/0 Trading Decision Rules
 
 - `3`: home team wins in 90 minutes including stoppage time.
 - `1`: draw after 90 minutes including stoppage time.
 - `0`: home team loses after 90 minutes including stoppage time.
 - Never substitute knockout advancement probability for a 90-minute probability.
 
-The bundled generator supports conservative, balanced, and aggressive list organization, budget trimming, stake count estimation, and an optional 9-match reference subset. These are data-analysis outputs, not purchasing or return advice.
+The bundled generator supports conservative, balanced, and aggressive list organization, budget trimming, stake count estimation, and an optional 9-match subset. Treat the output as a 3/1/0 decision board:
 
-Always retain this disclaimer:
+- **Banker**: single-selection match with low risk and high confidence score.
+- **Cover**: double/triple-selection match used to reduce one-match variance.
+- **Cut**: match removed because probability separation is weak or budget efficiency is poor.
+- **No-play**: match where expected value, confidence, or information quality is not enough.
 
-> 本工具仅提供基于公开数据和数学模型的赛事分析、模拟结果和清单整理，不构成任何购彩、投资或收益建议。请遵守当地法律法规，理性参与中国体育彩票，未成年人禁止参与。
+For final reports, convert the generated JSON into a trading plan: banker picks, cover picks, cuts, total stake count, budget usage, worst-case loss, and review triggers.

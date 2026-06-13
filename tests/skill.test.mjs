@@ -46,6 +46,59 @@ test("repository contains the required skill and bilingual documentation", () =>
   }
 });
 
+test("skill is positioned as a trading-decision skill", () => {
+  const skill = readFileSync(join(skillDir, "SKILL.md"), "utf8");
+  const reportTemplate = readFileSync(join(skillDir, "references/research-report.md"), "utf8");
+  const communication = readFileSync(join(skillDir, "references/communication-guidelines.md"), "utf8");
+
+  assert.match(skill, /Asian handicap trader/i);
+  assert.match(skill, /profit maximization/i);
+  assert.match(skill, /Trading Decision Card/i);
+  assert.match(reportTemplate, /交易决策卡/);
+  assert.match(communication, /最大化长期收益/);
+  assert.doesNotMatch(skill, /never make the final decision for the user/i);
+  assert.doesNotMatch(reportTemplate, /不替用户选择/);
+  assert.doesNotMatch(communication, /不替用户决策/);
+});
+
+test("primary skill surfaces do not conflict with trading positioning", () => {
+  const files = [
+    "SKILL.md",
+    "README.md",
+    "README.en.md",
+    "docs/QUICK-REFERENCE.md",
+    "references/research-report.md",
+    "references/communication-guidelines.md",
+    "agents/openai.yaml",
+    "package.json",
+    "scripts/predict-markets.mjs",
+    "scripts/value-scan.mjs",
+  ];
+  const forbidden = [
+    /Prediction Market Research Assistant/i,
+    /research assistant/i,
+    /研究助手/,
+    /教育性(?:概率分析|研究工具|示例|参考|公式演示|资金管理)/,
+    /educational (?:probability|examples|reference|risk scenarios|capital)/i,
+    /not betting advice/i,
+    /非投注建议/,
+    /非购彩建议/,
+    /不是购彩建议/,
+    /不替用户决策/,
+    /don't decide for them/i,
+    /must make their own decisions/i,
+    /免责声明/,
+  ];
+
+  for (const file of files) {
+    const content = readFileSync(join(skillDir, file), "utf8");
+    assert.match(content, /Trading Decision|trading-decision|trade decisions|trading scan|trade ranking|交易决策|Asian Handicap Trader|盘口交易员|profit maximization|最大化长期收益/i, file);
+    for (const pattern of forbidden) {
+      assert.doesNotMatch(content, pattern, `${file} contains stale positioning: ${pattern}`);
+    }
+  }
+});
+
 test("bundled core files match the published manifest", () => {
   const manifest = JSON.parse(readFileSync(join(skillDir, "core/manifest.json"), "utf8"));
   for (const [file, expectedHash] of Object.entries(manifest.files)) {
@@ -187,7 +240,11 @@ test("copied skill runs all bundled CLIs without the web app", () => {
         encoding: "utf8",
       });
       assert.equal(result.status, 0, result.stderr);
-      assert.doesNotThrow(() => JSON.parse(result.stdout));
+      const parsed = JSON.parse(result.stdout);
+      if (["scripts/predict-markets.mjs", "scripts/value-scan.mjs", "scripts/generate-lottery-slip.mjs"].includes(command[0])) {
+        assert.equal(parsed.disclaimer, undefined, `${command[0]} should use tradingNote instead of disclaimer`);
+        assert.ok(parsed.tradingNote, `${command[0]} should expose tradingNote`);
+      }
     }
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });

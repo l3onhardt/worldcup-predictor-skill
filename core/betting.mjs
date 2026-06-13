@@ -12,7 +12,7 @@ const labelToText = {
     "1": "平",
     "0": "客胜",
 };
-const defaultDisclaimer = "本工具仅提供基于公开数据和数学模型的赛事分析、模拟结果和清单整理，不构成任何购彩、投资或收益建议。请遵守当地法律法规，理性参与中国体育彩票，未成年人禁止参与。";
+const defaultTradingNote = "3/1/0 decision board for trading analysis. Use banker, cover, cut, and no-play labels with budget, variance, and invalidation checks.";
 function withBlendedProbabilities(match, marketWeight) {
     const market = match.market310;
     if (!market || !["3", "1", "0"].every((label) => Number.isFinite(market[label]))) {
@@ -217,6 +217,6 @@ export function generateBettingSlip(input) {
         selections,
         excludedMatches: renxuan9.excludedMatches,
         renxuan9,
-        disclaimer: input.disclaimer ?? input.issue.disclaimer ?? defaultDisclaimer,
+        tradingNote: input.tradingNote ?? input.issue.tradingNote ?? defaultTradingNote,
     };
 }

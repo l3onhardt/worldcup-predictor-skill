@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 市场 vs 模型价值扫描：去水 → 加权融合 → 分歧 → EV/Kelly。仅分析参考，不构成购彩建议。
+// Market vs model trading scan: devig -> blend -> divergence -> EV/Kelly -> trade ranking.
 
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -118,8 +118,8 @@ try {
     marketWeight: weight,
     devigMethod: args.devig ?? "power",
     matches,
-    disclaimer:
-      "EV 与 Kelly 仅为模型与市场对比的分析参考，不构成任何购彩、投资或收益建议。请遵守当地法律法规。",
+    tradingNote:
+      "EV and Kelly rank candidate trades. Apply liquidity, lineup, stale-data, correlation, and invalidation haircuts before final sizing.",
   };
   if (matches.length === 0) {
     report.fallback = "model_only";

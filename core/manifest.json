@@ -1,17 +1,17 @@
 {
-  "skillVersion": "0.4.0",
+  "skillVersion": "0.5.1",
   "sourceVersion": "prediction-core v0.3.0 (in-repo)",
   "modelVersion": "model-v0.3-market",
-  "sourceHash": "2d2f12b4868ef59750ca301534886aada8d6643bdad30ed6c78056612e4a62c2",
+  "sourceHash": "2aa3f74080b045f1893435b6800ed954e71d6443699b7bbb1870102a42730ab6",
   "files": {
-    "betting.mjs": "24f5806f2ebc554bb02c874d2ee77e81e8ce16eca0853918c64ee4e65a4667fa",
-    "index.mjs": "ca76bd2e197fdcd1caa22a0ec8c0aba50deb88d0802c9702fa1b342919eb370b",
-    "markets.mjs": "fa96e69485e86f33a46ce25f7a078c87582fdb561fc1806913e1ef89c8309b80",
-    "match.mjs": "03436c617faa6ddbf052a016cc89a0ea2ab49b6d3adb06e160f41c709054a530",
-    "odds.mjs": "181a405a5454af97fd5e5fa20399a29e76f0f9a7bf5491196f6c5b18bd861f99",
-    "tournament.mjs": "f5f1f917912382a84649ed5a566c8db48902195d11414687bf3b8fcd8fcf31e8",
-    "types.mjs": "20614dfd7d73bdc2703a8d73c37b29bcbda218f5d92840d83c6b59bf43867809",
-    "utils.mjs": "27775be7bbda56807311f968f32dcf9044993ad6159904044725a3a300e6c45a",
-    "version.mjs": "4f6788c8c225406eda06ff744efd5efb384d00844013df858dd9dad0ac091046"
+    "betting.mjs": "e5d7a3c58c2f4dccf8678cb0e4c57c31fe0e1cfc3265b5a1e1366cdf6dc2d440",
+    "index.mjs": "6ac691abf9ed29c589201201ea0a82d20357705a3c3e5bb589f6f971c4af99d7",
+    "markets.mjs": "f5951635d88f19b0a87c184f3d7c9cf3be802bb25d52d70270ab095d38cf637c",
+    "match.mjs": "247cffadbce62879ef9e24a5a84eea7056048c6595ce669d2d7579ca8bc57544",
+    "odds.mjs": "0b137918b2fdbd22204a7342129b3beedba0670e552921568e999df2b2141e27",
+    "tournament.mjs": "42d34e82f29b12b5fa3f959bc993007a33ef8423d453720d136dedc3eb50695d",
+    "types.mjs": "ded66411cfe52e173565bcf20413749d1247ca18e7644f3a1448ae1d0cd547da",
+    "utils.mjs": "8d635e2b38cdc0e1713f53d75af83e023b2c6e5a59302d95a6f6518a0b9b0b16",
+    "version.mjs": "8fc77814a86b784f646772b6ba3918a9634a1475e5afe645e4e9c05075fef3d1"
   }
 }

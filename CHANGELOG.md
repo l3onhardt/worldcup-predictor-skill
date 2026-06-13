@@ -1,210 +1,52 @@
-# Changelog / 变更日志
+# Changelog
 
-All notable changes to the worldcup-predictor skill will be documented in this file.
+All notable changes to the worldcup-predictor skill are documented here.
+
+## [0.5.1] - 2026-06-13
+
+### Repositioned
+
+- Repositioned the skill as a World Cup Asian handicap trading-decision skill.
+- The primary output is now a Trading Decision Card: `TRADE`, `SMALL TRADE`, `WAIT`, `PASS`, or `HEDGE/REDUCE`.
+- The skill now optimizes for long-run expected profit with bankroll survival constraints.
+- Risk is expressed as trade structure: entry, size, Kelly haircut, invalidation, exit, hedge, liquidity, and worst-case path.
+
+### Changed
+
+- Rewrote `SKILL.md`, `references/research-report.md`, and `references/communication-guidelines.md` around trading execution.
+- Rewrote `README.md`, `README.en.md`, and `docs/QUICK-REFERENCE.md` to remove stale research-assistant positioning.
+- Updated `agents/openai.yaml` to present the skill as `World Cup Asian Handicap Trader`.
+- Replaced CLI output `disclaimer` fields with `tradingNote` in market pricing, value scan, and 3/1/0 decision output.
+- Rewrote `references/lottery-rules.md` as a 3/1/0 decision-board guide: banker, cover, cut, and no-play.
+
+### Validation
+
+- Added tests preventing the primary skill surfaces from drifting back to stale positioning.
+- Added tests requiring trading-facing CLIs to expose `tradingNote` instead of `disclaimer`.
+- Refreshed `core/manifest.json` after core output-field changes.
 
 ## [0.5.0] - 2026-06-12
 
-### 🎯 Major Repositioning: 从预测工具到研究助手
+### Added
 
-**核心变化**: 将 skill 从"世界杯预测机"重新定位为"世界杯预测市场研究助手"，强调教育性、研究性和风险管理，而非预测准确性或收益承诺。
-
-### Added / 新增
-
-#### 结构化输出模板 (8-Section Research Report)
-- **Section 1**: 数据摘要 - 版本、时间戳、免责声明
-- **Section 2**: 隐含概率计算 - 去水方法、市场 vs 模型
-- **Section 3**: 主观概率判断 - 多因素综合、融合逻辑
-- **Section 4**: 价值差异分析 - EV 计算、分歧标记
-- **Section 5**: 风险因素 - 系统性、比赛特定、组合风险
-- **Section 6**: 情景分析 - 最佳/最坏/预期/破产风险
-- **Section 7**: 资金分配示例 - 保守/中性/激进（教育性）
-- **Section 8**: 结论与研究性建议 - 核心发现、进一步研究
-
-#### 行为准则体系 (Non-Negotiable Rules)
-- **技术准确性规则**: 保留原有技术规范，强化审计追踪
-- **研究定位与合规**: 7 个"必须做" + 8 个"绝对禁止"
-- **语言与表述规范**: 推荐用语列表 + 禁用语言列表
-- **风险保护机制**: 
-  - 单笔风险上限（保守 ≤2%、中性 ≤5%、激进 ≤10%）
-  - 总敞口上限（保守 ≤5%、中性 ≤15%、激进 ≤30%）
-  - 6 种强制警告触发条件
-
-#### 沟通指南 (Communication Guidelines)
-- 开场与定位：每次明确说明教育性质
-- 主动询问确认：数据来源、预算、风险偏好、分析目标
-- 渐进式披露：根据需求调整详细程度
-- 纠正性反馈：温和但坚定地纠正不当表述
-- 不确定性强调：关键结论处反复强调局限
-
-#### 使用场景示例
-- Scenario 1: 基础概率查询
-- Scenario 2: 市场价值扫描
-- Scenario 3: 完整风险分析报告
-- Scenario 4: 彩票参考列表
-- Scenario 5: 锦标赛冠军概率
-
-#### 质量检查清单
-- 内容完整性检查（5 项）
-- 风险披露检查（5 项）
-- 语言合规检查（5 项）
-- 技术准确性检查（5 项）
-- 用户体验检查（5 项）
-
-#### 文档
-- `docs/SKILL-OPTIMIZATION-SUMMARY.md`: 详细的优化说明文档
-- `docs/QUICK-REFERENCE.md`: 快速参考卡片（含口诀 R.E.S.E.A.R.C.H）
-- 更新 README.md: 新定位、新声明、新使用示例
-
-### Changed / 变更
-
-#### SKILL.md
-- **name**: 保持 `worldcup-predictor`（兼容性）
-- **description**: 从"预测"改为"预测市场研究与风险分析"
-- **title**: 从"世界杯预测机"改为"世界杯预测市场研究助手"
-- **Workflow**: 从 8 步升级为 5 阶段结构化流程
-  - Phase 1: 数据获取与校验
-  - Phase 2: 模型独立性保障 (blind-commit)
-  - Phase 3: 市场数据采集（带用户确认）
-  - Phase 4: 概率计算与分析
-  - Phase 5: 结构化输出（渐进式披露）
-
-#### 输出格式
-- 所有 EV/Kelly 输出必须标注"分析参考，非购彩建议"
-- 所有资金配置必须标注"教育性示例"
-- 每个报告必须包含免责声明和不确定性说明
-- 强制包含"最坏情况"和"风险因素"章节
-
-#### 语言与表述
-- 禁用: "稳赚""必赢""保本""建议买入""错过可惜"
-- 推荐: "理论期望值""教育性示例""最坏情况""需进一步研究"
-- 从"预测结果"改为"概率分析"
-- 从"推荐方案"改为"教育性示例"或"研究性建议"
-
-### Deprecated / 弃用
-
-- ❌ 弃用诱导性表述（"稳赚""必赢""建议买入"）
-- ❌ 弃用保证性声明（"保证准确""必定盈利"）
-- ❌ 弃用替用户决策的表述（"你应该""最佳选择是"）
-
-### Fixed / 修复
-
-无（本次更新主要是定位和行为准则优化）
-
-### Security / 安全
-
-- 新增强制风险上限，防止用户过度投入
-- 新增借贷检测和警告机制
-- 新增追损行为识别和干预
-- 新增问题赌博迹象处理流程
+- Market snapshot flow for manual odds and Polymarket Gamma API.
+- Blind-commit workflow for model independence before reading market prices.
+- Model/market/devig/blended probability reporting.
+- EV and fractional Kelly value metrics.
+- Asian handicap, totals, and BTTS fair-line pricing from the score distribution.
 
 ## [0.4.0] - 2026-06-11
 
 ### Added
-- v0.4 双管道数据架构（基本面与市场隔离）
-- Blind-commit 模型独立性验证（哈希落盘，时间序可验证）
-- 审计防火墙（market-like sources 禁止进入基本面 `sourceVersions`）
-- 基本面数据源适配器（World Elo / FIFA ranking / football-data）与 TTL 刷新调度
-- Gamma API (Polymarket) 现代 per-outcome binary match markets 支持，fetch 重试
+
+- Dual-pipeline data architecture separating fundamental snapshots from market snapshots.
+- Audit firewall rejecting market-like sources in fundamental `sourceVersions`.
+- TTL-based data refresh adapters for Elo, FIFA, and football-data sources.
 
 ## [0.3.0] - 2026-06-10
 
 ### Added
-- 多盘口定价：亚盘（含 quarter 盘拆盘）、大小球全线位、BTTS 公平定价
-- 市场快照、去水（power method）、模型融合与 value-scan CLI
-- EV 与 1/4 Kelly 分析参考输出
-- Dixon-Coles ρ 连续线性函数（替代阶梯函数）
-- 淘汰赛平局晋级两段模型（加时 + 点球）
 
-### Changed
-- core 版本升级到 v0.3.0
-- 去水默认方法为 power method
-- 融合权重默认 0.7 市场 + 0.3 模型
-
-## [0.2.0] - 2025-XX-XX
-
-### Added
-- 基础概率预测功能
-- 锦标赛模拟
-- 亚盘、大小球、BTTS 公平定价
-- 3/1/0 彩票参考列表
-
-### Changed
-- 初始公开发布
-
-## Future Roadmap / 未来规划
-
-### v0.6.0 (计划中)
-- [ ] 历史回测准确率数据和置信区间
-- [ ] 自动化质量检查脚本
-- [ ] 交互式风险计算器
-- [ ] 多语言输出模板（中/英完整对照）
-
-### v0.7.0 (计划中)
-- [ ] 用户教育知识库（概率论、凯利公式、风险管理）
-- [ ] 风险管理专家审核认证
-- [ ] 方法论白皮书发布
-- [ ] 社区反馈整合
-
-## Migration Guide / 迁移指南
-
-### 从 v0.4.x 升级到 v0.5.0
-
-**对用户**:
-- ✅ **无需更改**: 所有 CLI 脚本调用方式不变
-- ✅ **无需更改**: 数据格式和快照结构不变
-- ⚠️ **注意**: 输出格式更详细，包含更多风险警告和免责声明
-- ⚠️ **注意**: Agent 会主动询问确认信息（数据来源、预算、风险偏好）
-- ⚠️ **注意**: "预测结果"现在称为"概率分析"或"研究报告"
-
-**对开发者**:
-- ✅ **向后兼容**: SKILL.md 的 `name` 仍为 `worldcup-predictor`
-- ✅ **向后兼容**: 所有技术计算能力保持不变
-- ⚠️ **新增约束**: 输出必须包含免责声明和风险警告
-- ⚠️ **新增约束**: 禁用某些诱导性表述
-- ⚠️ **新增检查**: 超限风险自动触发警告
-
-**推荐操作**:
-1. 阅读 `docs/QUICK-REFERENCE.md` 了解新的沟通方式
-2. 阅读 `docs/SKILL-OPTIMIZATION-SUMMARY.md` 理解新定位
-3. 更新任何引用旧名称（"世界杯预测机"）的文档为新名称
-4. 如果有自定义 prompt，添加免责声明和风险警告
-5. 如果有 UI，添加"教育性工具"声明
-
-## Notes / 说明
-
-### 为什么要这样改？
-
-**问题**: 原定位可能让用户产生错误期望
-- "预测机"听起来像能准确预知未来
-- 缺乏明确的风险警告和不确定性披露
-- EV 和 Kelly 输出可能被误解为"保证收益"
-- 没有强制的风险保护机制
-
-**解决**: 重新定位为"研究助手"
-- 明确这是教育和研究工具，不是投资建议
-- 强制包含风险警告、最坏情况、不确定性声明
-- EV/Kelly 明确标注为"分析参考"
-- 内置风险上限和警告触发机制
-
-**结果**: 负责任的 AI 工具
-- 用户有完整信息做决策
-- 减少误解和不切实际期望
-- 保护用户避免高风险行为
-- 符合负责任 AI 伦理准则
-
-### 兼容性承诺
-
-我们承诺：
-- ✅ 所有技术计算能力保持不变
-- ✅ CLI 脚本接口保持稳定
-- ✅ 数据格式向后兼容
-- ✅ Skill 调用名称不变（`worldcup-predictor`）
-
-但输出格式会更详细、更强调风险，这是为了保护用户。
-
----
-
-**Latest Version**: v0.5.0  
-**Last Updated**: 2026-06-12  
-**Maintained By**: qqyule  
-**License**: MIT
+- Deterministic World Cup match prediction, score distribution, and tournament simulation core.
+- 90-minute result scope and advancement result scope separation.
+- 3/1/0 list generation from 90-minute probabilities.

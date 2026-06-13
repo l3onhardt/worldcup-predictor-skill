@@ -1,7 +1,7 @@
 {
   "name": "worldcup-predictor-skill",
-  "version": "0.5.0",
-  "description": "A prediction-market research and risk-analysis Agent Skill for the World Cup: audited offline inputs, implied-probability devigging, model/market divergence, and educational risk scenarios.",
+  "version": "0.5.1",
+  "description": "A World Cup Asian handicap trading-decision Agent Skill: audited inputs, fair-line pricing, model/market divergence, EV/Kelly sizing, entry, invalidation, hedge, wait, pass, and trade decisions.",
   "type": "module",
   "private": false,
   "scripts": {
@@ -26,11 +26,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/qqyule/worldcup-predictor-skill.git"
+    "url": "git+https://github.com/l3onhardt/worldcup-predictor-skill.git"
   },
   "bugs": {
-    "url": "https://github.com/qqyule/worldcup-predictor-skill/issues"
+    "url": "https://github.com/l3onhardt/worldcup-predictor-skill/issues"
   },
-  "homepage": "https://github.com/qqyule/worldcup-predictor-skill#readme",
+  "homepage": "https://github.com/l3onhardt/worldcup-predictor-skill#readme",
   "license": "MIT"
 }

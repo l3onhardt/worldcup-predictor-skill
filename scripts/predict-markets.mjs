@@ -37,7 +37,7 @@ try {
         modelVersion: snapshot.metadata.modelVersion,
         dataVersion: snapshot.metadata.dataVersion,
         generatedAt: snapshot.metadata.generatedAt,
-        disclaimer: "盘口定价为模型公平价，仅供分析参考，不构成任何购彩或投资建议。",
+        tradingNote: "Fair-line pricing output for trading decisions. Use with market price, liquidity, lineup, and invalidation checks before sizing.",
         ...book,
       },
       null,
