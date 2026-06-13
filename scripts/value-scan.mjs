@@ -11,6 +11,8 @@ import {
   devigPower,
   devigProportional,
   divergenceReport,
+  handicapValueMetrics,
+  priceMatchMarkets,
   predictMatch,
   valueMetrics,
 } from "../core/index.mjs";
@@ -29,6 +31,146 @@ const args = parseArgs(process.argv.slice(2));
 
 if (args.help || !args.market) fail("Missing required --market argument.", usage);
 
+function closeLine(left, right) {
+  return Math.abs(left - right) < 1e-9;
+}
+
+function findOutcome(market, aliases) {
+  const normalized = new Set(aliases.map((alias) => String(alias).toLowerCase()));
+  return market.outcomes.find((outcome) => normalized.has(String(outcome.name).toLowerCase()));
+}
+
+function bestByEv(entries) {
+  return entries.reduce((best, entry) => (entry.ev > best.ev ? entry : best));
+}
+
+function matchInputFromState({ snapshot, state, homeTeam, awayTeam }) {
+  return {
+    matchId: state.matchId,
+    homeTeam,
+    awayTeam,
+    stage: state.stage,
+    modelVersion: snapshot.metadata.modelVersion,
+    dataVersion: snapshot.metadata.dataVersion,
+    generatedAt: snapshot.metadata.generatedAt,
+    venueCountryCode: state.venueCountryCode,
+    contextAdjustments: snapshot.contextAdjustments,
+  };
+}
+
+function blindCommitForMatch({ args, blindLogPath, marketFetchedAt, prediction, snapshot, state }) {
+  const blindCommit = verifyCommit(
+    blindLogPath,
+    state.matchId,
+    snapshot.metadata.dataVersion,
+    { "3": prediction.homeWin90Prob, "1": prediction.draw90Prob, "0": prediction.awayWin90Prob },
+    marketFetchedAt,
+  );
+  if (args["require-blind-commit"] && !blindCommit.verified) {
+    throw new Error(`blind commit required but not verified for ${state.matchId}: ${blindCommit.note}`);
+  }
+  return blindCommit;
+}
+
+function scanOneXTwo({ market, state, homeTeam, awayTeam, marketBook, prediction, blindCommit, devig, weight, threshold }) {
+  const modelProbs = [prediction.homeWin90Prob, prediction.draw90Prob, prediction.awayWin90Prob];
+  const orderedOutcomes = labels.map((name) => {
+    const outcome = market.outcomes.find((entry) => entry.name === name);
+    if (!outcome) throw new Error(`Market ${market.matchId} is missing outcome ${name}.`);
+    return outcome;
+  });
+  const marketProbs = devig(orderedOutcomes.map((outcome) => outcome.impliedProb));
+  const blended = blendProbabilities(marketProbs, modelProbs, weight);
+  const divergence = divergenceReport(modelProbs, marketProbs, threshold);
+  const fairOdds = [
+    marketBook.oneXTwo.fairOdds.home,
+    marketBook.oneXTwo.fairOdds.draw,
+    marketBook.oneXTwo.fairOdds.away,
+  ];
+  const valueEntries = labels.map((name, index) => ({
+    outcome: name,
+    price: orderedOutcomes[index].price,
+    fairOdds: fairOdds[index],
+    ...valueMetrics(blended[index], orderedOutcomes[index].price),
+  }));
+  const candidate = {
+    type: "1x2",
+    matchId: state.matchId,
+    homeTeam: homeTeam.name,
+    awayTeam: awayTeam.name,
+    resultScope: "90minResult",
+    blindCommit,
+    overround: market.overround,
+    model90Prob: Object.fromEntries(labels.map((name, index) => [name, round(modelProbs[index])])),
+    market90Prob: Object.fromEntries(labels.map((name, index) => [name, round(marketProbs[index])])),
+    blended90Prob: Object.fromEntries(labels.map((name, index) => [name, round(blended[index])])),
+    divergence: divergence.map((entry, index) => ({ outcome: labels[index], ...entry })),
+    valueMetrics: valueEntries,
+    bestValue: bestByEv(valueEntries),
+  };
+  return candidate;
+}
+
+function sideValueEntry({ market, side, line }) {
+  const offered = findOutcome(market, side.aliases);
+  if (!offered) throw new Error(`Market ${market.matchId} ${market.type} ${line} is missing ${side.outcome}.`);
+  return {
+    outcome: side.outcome,
+    side: side.outcome,
+    line,
+    price: offered.price,
+    fairOdds: side.model.fairOdds,
+    fullWin: round(side.model.fullWin),
+    halfWin: round(side.model.halfWin),
+    push: round(side.model.push),
+    halfLose: round(side.model.halfLose),
+    fullLose: round(side.model.fullLose),
+    ...handicapValueMetrics(side.model, offered.price),
+  };
+}
+
+function scanAsianHandicap({ market, state, homeTeam, awayTeam, marketBook, blindCommit }) {
+  const pricedLine = marketBook.asianHandicaps.find((entry) => closeLine(entry.line, market.line));
+  if (!pricedLine) return null;
+  const valueEntries = [
+    { outcome: "home", aliases: ["home", "3", "h"], model: pricedLine.home },
+    { outcome: "away", aliases: ["away", "0", "a"], model: pricedLine.away },
+  ].map((side) => sideValueEntry({ market, side, line: market.line }));
+  return {
+    type: "ah",
+    matchId: state.matchId,
+    homeTeam: homeTeam.name,
+    awayTeam: awayTeam.name,
+    resultScope: "90minResult",
+    blindCommit,
+    line: market.line,
+    overround: market.overround,
+    valueMetrics: valueEntries,
+    bestValue: bestByEv(valueEntries),
+  };
+}
+
+function scanOverUnder({ market, state, homeTeam, awayTeam, marketBook, blindCommit }) {
+  const pricedLine = marketBook.overUnders.find((entry) => closeLine(entry.line, market.line));
+  if (!pricedLine) return null;
+  const valueEntries = [
+    { outcome: "over", aliases: ["over", "o"], model: pricedLine.over },
+    { outcome: "under", aliases: ["under", "u"], model: pricedLine.under },
+  ].map((side) => sideValueEntry({ market, side, line: market.line }));
+  return {
+    type: "ou",
+    matchId: state.matchId,
+    homeTeam: homeTeam.name,
+    awayTeam: awayTeam.name,
+    resultScope: "90minResult",
+    blindCommit,
+    line: market.line,
+    overround: market.overround,
+    valueMetrics: valueEntries,
+    bestValue: bestByEv(valueEntries),
+  };
+}
+
 try {
   const snapshot = auditSnapshot(readJson(args.data || defaultDataPath));
   const marketSnapshot = auditMarketSnapshot(readJson(args.market));
@@ -39,70 +181,56 @@ try {
   if (!Number.isFinite(weight) || weight < 0 || weight > 1) throw new Error("--weight must be between 0 and 1.");
 
   const teamsById = new Map(snapshot.teams.map((team) => [team.id, team]));
+  const blindLogPath = args["blind-log"] || defaultBlindLogPath;
   const matches = [];
+  const markets = [];
+
   for (const market of marketSnapshot.markets) {
-    if (market.type !== "1x2") continue;
+    if (market.type === "outright") continue;
     const state = snapshot.matchStates.find((entry) => entry.matchId === market.matchId);
     if (!state) continue;
     const homeTeam = teamsById.get(state.homeTeamId);
     const awayTeam = teamsById.get(state.awayTeamId);
     if (!homeTeam || !awayTeam) continue;
 
-    const prediction = predictMatch({
-      matchId: state.matchId,
-      homeTeam,
-      awayTeam,
-      stage: state.stage,
-      modelVersion: snapshot.metadata.modelVersion,
-      dataVersion: snapshot.metadata.dataVersion,
-      generatedAt: snapshot.metadata.generatedAt,
-      venueCountryCode: state.venueCountryCode,
-      contextAdjustments: snapshot.contextAdjustments,
-    });
-    const modelProbs = [prediction.homeWin90Prob, prediction.draw90Prob, prediction.awayWin90Prob];
-    const blindLogPath = args["blind-log"] || defaultBlindLogPath;
-    const blindCommit = verifyCommit(
+    const matchInput = matchInputFromState({ snapshot, state, homeTeam, awayTeam });
+    const prediction = predictMatch(matchInput);
+    const marketBook = priceMatchMarkets(matchInput);
+    const blindCommit = blindCommitForMatch({
+      args,
       blindLogPath,
-      state.matchId,
-      snapshot.metadata.dataVersion,
-      { "3": prediction.homeWin90Prob, "1": prediction.draw90Prob, "0": prediction.awayWin90Prob },
-      marketSnapshot.fetchedAt,
-    );
-    if (args["require-blind-commit"] && !blindCommit.verified) {
-      throw new Error(`blind commit required but not verified for ${state.matchId}: ${blindCommit.note}`);
-    }
-    const orderedOutcomes = labels.map((name) => {
-      const outcome = market.outcomes.find((entry) => entry.name === name);
-      if (!outcome) throw new Error(`Market ${market.matchId} is missing outcome ${name}.`);
-      return outcome;
+      marketFetchedAt: marketSnapshot.fetchedAt,
+      prediction,
+      snapshot,
+      state,
     });
-    const marketProbs = devig(orderedOutcomes.map((outcome) => outcome.impliedProb));
-    const blended = blendProbabilities(marketProbs, modelProbs, weight);
-    const divergence = divergenceReport(modelProbs, marketProbs, threshold);
 
-    matches.push({
-      matchId: state.matchId,
-      homeTeam: homeTeam.name,
-      awayTeam: awayTeam.name,
-      resultScope: "90minResult",
-      blindCommit,
-      overround: market.overround,
-      model90Prob: Object.fromEntries(labels.map((name, index) => [name, round(modelProbs[index])])),
-      market90Prob: Object.fromEntries(labels.map((name, index) => [name, round(marketProbs[index])])),
-      blended90Prob: Object.fromEntries(labels.map((name, index) => [name, round(blended[index])])),
-      divergence: divergence.map((entry, index) => ({ outcome: labels[index], ...entry })),
-      valueMetrics: labels.map((name, index) => ({
-        outcome: name,
-        price: orderedOutcomes[index].price,
-        ...valueMetrics(blended[index], orderedOutcomes[index].price),
-      })),
-      bestValue: null,
-    });
+    if (market.type === "1x2") {
+      const candidate = scanOneXTwo({
+        market,
+        state,
+        homeTeam,
+        awayTeam,
+        marketBook,
+        prediction,
+        blindCommit,
+        devig,
+        weight,
+        threshold,
+      });
+      matches.push(candidate);
+      markets.push(candidate);
+    } else if (market.type === "ah") {
+      const candidate = scanAsianHandicap({ market, state, homeTeam, awayTeam, marketBook, blindCommit });
+      if (candidate) markets.push(candidate);
+    } else if (market.type === "ou") {
+      const candidate = scanOverUnder({ market, state, homeTeam, awayTeam, marketBook, blindCommit });
+      if (candidate) markets.push(candidate);
+    }
   }
-  for (const match of matches) {
-    match.bestValue = match.valueMetrics.reduce((best, entry) => (entry.ev > best.ev ? entry : best));
-  }
+
   matches.sort((left, right) => right.bestValue.ev - left.bestValue.ev);
+  markets.sort((left, right) => right.bestValue.ev - left.bestValue.ev);
 
   const ageHours = marketAgeHours(marketSnapshot, snapshot.metadata.generatedAt);
   const report = {
@@ -110,20 +238,22 @@ try {
     dataVersion: snapshot.metadata.dataVersion,
     marketSource: marketSnapshot.source,
     marketFetchedAt: marketSnapshot.fetchedAt,
+    marketSourceQuality: marketSnapshot.sourceQuality ?? null,
     marketAgeHours: ageHours === null ? null : round(ageHours, 2),
     staleWarning:
       ageHours !== null && ageHours > maxAgeHours
-        ? `市场快照与赛事快照时间差 ${round(ageHours, 1)} 小时，超过 ${maxAgeHours} 小时阈值，结果可能过期。`
+        ? `Market snapshot is ${round(ageHours, 1)} hours from event snapshot, above ${maxAgeHours} hour threshold.`
         : undefined,
     marketWeight: weight,
     devigMethod: args.devig ?? "power",
     matches,
+    markets,
     tradingNote:
       "EV and Kelly rank candidate trades. Apply liquidity, lineup, stale-data, correlation, and invalidation haircuts before final sizing.",
   };
-  if (matches.length === 0) {
+  if (markets.length === 0) {
     report.fallback = "model_only";
-    report.note = "市场快照中没有可与赛事快照匹配的 1x2 盘口。";
+    report.note = "No 1x2/AH/OU market in the market snapshot matched the audited event snapshot.";
   }
   console.log(JSON.stringify(report, null, 2));
 } catch (error) {

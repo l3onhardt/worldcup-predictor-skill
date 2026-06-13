@@ -9,6 +9,7 @@ import {
   devigProportional,
   divergenceReport,
   impliedFromDecimal,
+  handicapValueMetrics,
   valueMetrics,
 } from "../core/odds.mjs";
 
@@ -69,4 +70,33 @@ test("value metrics compute EV and capped quarter Kelly", () => {
   assert.equal(negative.kellyFraction, 0);
   const capped = valueMetrics(0.9, 10);
   assert.equal(capped.kellyFraction, 0.1);
+});
+
+test("handicap value metrics price full, half, and push outcomes", () => {
+  const value = handicapValueMetrics(
+    {
+      fullWin: 0.42,
+      halfWin: 0.08,
+      push: 0.12,
+      halfLose: 0.1,
+      fullLose: 0.28,
+    },
+    2.05,
+  );
+  const expectedEv = 0.42 * 1.05 + 0.08 * 0.525 - 0.1 * 0.5 - 0.28;
+  assert.ok(Math.abs(value.ev - expectedEv) < 1e-4);
+  assert.ok(value.kellyFraction > 0);
+
+  const negative = handicapValueMetrics(
+    {
+      fullWin: 0.25,
+      halfWin: 0.05,
+      push: 0.2,
+      halfLose: 0.15,
+      fullLose: 0.35,
+    },
+    1.9,
+  );
+  assert.ok(negative.ev < 0);
+  assert.equal(negative.kellyFraction, 0);
 });

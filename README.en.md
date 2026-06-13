@@ -68,10 +68,12 @@ The report then expands team state, bookmaker read, probability chain, EV/Kelly,
 
 ### Market Pricing
 
-- Polymarket or manual odds snapshots.
+- Free/public market capture through API exports, browser observations, or manual composite snapshots.
+- Polymarket or manual odds snapshots as cross-market confirmation.
 - Power-method devigging.
-- Model, devigged market, and blended probability columns.
-- EV and fractional Kelly.
+- Model, devigged market, and blended probability columns for 1x2.
+- Asian handicap and over/under fair odds from five-segment outcomes: full win, half win, push, half lose, full lose.
+- EV and fractional Kelly across `1x2`, `ah`, and `ou`.
 - Entry triggers, sizing haircuts, and correlated exposure control.
 
 ### Team-State Analysis
@@ -95,6 +97,9 @@ Requires Node.js 20 or newer.
 ```bash
 node scripts/predict-match.mjs --data assets/sample-data/worldcup-2026.json --home MEX --away KOR
 node scripts/predict-markets.mjs --data assets/sample-data/worldcup-2026.json --home MEX --away KOR
+node scripts/fetch-free-market.mjs --composite assets/sample-data/free-market-composite.json --out market.json --append-history logs/markets
+node scripts/fetch-free-market.mjs --the-odds-api-file odds-api-event.json --match-id sample-group-a-1 --bookmaker pinnacle --out market.json
+node scripts/fetch-free-market.mjs --the-odds-api-event <event-id> --sport soccer_fifa_world_cup --match-id <match-id> --out market.json
 node scripts/fetch-market.mjs --manual my-odds.json --out market.json
 node scripts/value-scan.mjs --data assets/sample-data/worldcup-2026.json --market assets/sample-data/market-snapshot.json
 node scripts/blind-commit.mjs --data assets/sample-data/worldcup-2026.json --all
@@ -107,6 +112,7 @@ node scripts/generate-lottery-slip.mjs --issue assets/sample-data/lottery-issue.
 - `90minResult`: 90 minutes plus stoppage time. Use for 1x2, Asian handicap, totals, BTTS, 3-1-0, and group points.
 - `advanceResult`: advancement after extra time or penalties. Use for knockout progression, champion paths, and outright markets.
 - Market data never enters fundamental `sourceVersions`.
+- Free market snapshots carry `sourceQuality`; use it as a sizing haircut and history audit input.
 - Only `manual_review` or versioned `deterministic_rule` adjustments can affect calculations.
 - The LLM explains CLI output; it does not invent live facts or hand-calculate probabilities.
 

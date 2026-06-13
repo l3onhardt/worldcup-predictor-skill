@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -97,6 +97,21 @@ test("primary skill surfaces do not conflict with trading positioning", () => {
       assert.doesNotMatch(content, pattern, `${file} contains stale positioning: ${pattern}`);
     }
   }
+});
+
+test("primary skill surfaces expose free market AH and OU workflow", () => {
+  const skill = readFileSync(join(skillDir, "SKILL.md"), "utf8");
+  const quickReference = readFileSync(join(skillDir, "docs/QUICK-REFERENCE.md"), "utf8");
+  const freeSources = readFileSync(join(skillDir, "references/free-data-sources.md"), "utf8");
+
+  assert.match(skill, /fetch-free-market\.mjs/);
+  assert.match(skill, /sourceQuality/);
+  assert.match(skill, /report\.markets\[\]/);
+  assert.match(quickReference, /append-history/);
+  assert.match(quickReference, /1x2.*ah.*ou/i);
+  assert.match(freeSources, /Free API export/);
+  assert.match(freeSources, /Public browser capture/);
+  assert.match(freeSources, /Composite Schema/);
 });
 
 test("bundled core files match the published manifest", () => {
@@ -317,6 +332,78 @@ test("value scan blends devigged market with model and reports divergence", () =
     assert.ok(outcome.kellyFraction >= 0 && outcome.kellyFraction <= 0.1);
   }
   assert.ok(typeof report.marketAgeHours === "number");
+});
+
+test("value scan ranks 1x2, asian handicap, and over/under markets", () => {
+  const tempRoot = mkdtempSync(join(tmpdir(), "worldcup-market-scan-"));
+  const marketPath = join(tempRoot, "market.json");
+  writeFileSync(
+    marketPath,
+    JSON.stringify(
+      {
+        source: "free-composite",
+        fetchedAt: "2026-06-04T12:00:00.000Z",
+        sourceQuality: 0.72,
+        markets: [
+          {
+            matchId: "sample-group-a-1",
+            type: "1x2",
+            outcomes: [
+              { name: "3", label: "Mexico", price: 2.3 },
+              { name: "1", label: "Draw", price: 3.2 },
+              { name: "0", label: "South Korea", price: 3.1 },
+            ],
+          },
+          {
+            matchId: "sample-group-a-1",
+            type: "ah",
+            line: 0,
+            outcomes: [
+              { name: "home", label: "Mexico 0", price: 1.95 },
+              { name: "away", label: "South Korea 0", price: 1.95 },
+            ],
+          },
+          {
+            matchId: "sample-group-a-1",
+            type: "ou",
+            line: 2.5,
+            outcomes: [
+              { name: "over", label: "Over 2.5", price: 1.95 },
+              { name: "under", label: "Under 2.5", price: 1.95 },
+            ],
+          },
+        ],
+      },
+      null,
+      2,
+    ),
+  );
+
+  try {
+    const result = spawnSync(
+      process.execPath,
+      ["scripts/value-scan.mjs", "--market", marketPath],
+      { cwd: skillDir, encoding: "utf8" },
+    );
+    assert.equal(result.status, 0, result.stderr);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.marketSourceQuality, 0.72);
+    assert.ok(Array.isArray(report.markets));
+    assert.ok(report.markets.some((market) => market.type === "1x2"));
+    assert.ok(report.markets.some((market) => market.type === "ah"));
+    assert.ok(report.markets.some((market) => market.type === "ou"));
+    const handicap = report.markets.find((market) => market.type === "ah");
+    assert.equal(handicap.resultScope, "90minResult");
+    assert.equal(handicap.line, 0);
+    assert.ok(handicap.valueMetrics.every((entry) => Number.isFinite(entry.ev)));
+    assert.ok(handicap.valueMetrics.every((entry) => entry.kellyFraction >= 0 && entry.kellyFraction <= 0.1));
+    assert.ok(handicap.bestValue);
+    const total = report.markets.find((market) => market.type === "ou");
+    assert.equal(total.line, 2.5);
+    assert.ok(total.valueMetrics.some((entry) => entry.fairOdds > 1));
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
 });
 
 test("predict-match with --market blends probabilities and stays unchanged without it", () => {

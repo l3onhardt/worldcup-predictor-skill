@@ -46,15 +46,21 @@ Use the commit as a trading audit trail: model view first, market interpretation
 ### Phase 3 - Market And Bookmaker Inputs
 
 ```bash
+node scripts/fetch-free-market.mjs --composite <free-capture.json> --out market.json --append-history logs/markets
+node scripts/fetch-free-market.mjs --the-odds-api-file <event.json> --match-id <id> --bookmaker <key> --out market.json
+node scripts/fetch-free-market.mjs --the-odds-api-event <event-id> --sport soccer_fifa_world_cup --match-id <id> --out market.json
 node scripts/fetch-market.mjs --gamma-slug <event-slug> --match-id <id> --home <name> --away <name> --out market.json
 node scripts/fetch-market.mjs --manual <odds.json> --out market.json
 ```
+
+For free Asian handicap, total, and 1x2 data, read `references/free-data-sources.md`. Prefer free API/export first, public browser capture second, manual composite third, and Polymarket/prediction-market feeds as cross-market confirmation. If an API key is absent, `fetch-free-market.mjs` reports `skipped_no_key` instead of blocking offline/manual workflows.
 
 For Asian handicap, over/under, and 1x2 inputs, capture:
 
 - Opening line, current line, water/odds, source, timestamp, and whether the price includes vig.
 - Direction of movement: line move, water move, or price compression with no line move.
 - Market structure: favourite/underdog tax, public team bias, stale favourite line, injury/news repricing, low-liquidity distortion, and cross-market disagreement.
+- `sourceQuality` and history rows when using free/public captures; lower quality is a sizing haircut, not an automatic refusal.
 
 ### Phase 4 - Probability And Fair-Line Calculation
 
@@ -67,6 +73,8 @@ node scripts/generate-lottery-slip.mjs --issue <issue> --strategy balanced --bud
 ```
 
 All numbers in reports must come from CLI output or explicitly supplied market data. No mental math, no invented injuries, no invented line moves.
+
+`value-scan.mjs` ranks `report.markets[]` across 1x2, Asian handicap, and over/under, while preserving legacy `report.matches[]` for 1x2. Treat AH/OU fair odds as five-segment outcomes: full win, half win, push, half lose, full lose.
 
 ### Phase 5 - Trading Decision Output
 
@@ -150,6 +158,7 @@ Interpret the line as information and inventory management:
 - Read `references/official-data-sources.md` before assessing official source provenance.
 - Read `references/model-methodology.md` when explaining calculations and limitations.
 - Read `references/market-methodology.md` before explaining market blending, devig, fair pricing, EV, or Kelly outputs.
+- Read `references/free-data-sources.md` before fetching, browser-capturing, normalizing, or quality-scoring free Asian handicap/total/1x2 prices.
 - Read `references/data-pipeline.md` before refreshing snapshots, explaining freshness/TTL, or verifying blind commits.
 - Read `references/tournament-rules.md` for completed-result continuation and 2026 paths.
 - Read `references/lottery-rules.md` before producing a 3/1/0 decision analysis.

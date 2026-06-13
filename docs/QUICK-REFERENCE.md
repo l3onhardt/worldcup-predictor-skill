@@ -34,6 +34,8 @@ node scripts/refresh-snapshot.mjs --check
 node scripts/blind-commit.mjs --data <snapshot> --all
 node scripts/predict-match.mjs --data <snapshot> --home X --away Y
 node scripts/predict-markets.mjs --data <snapshot> --home X --away Y
+node scripts/fetch-free-market.mjs --composite free-capture.json --out market.json --append-history logs/markets
+node scripts/fetch-free-market.mjs --the-odds-api-file event.json --match-id <id> --bookmaker <key> --out market.json
 node scripts/fetch-market.mjs --manual odds.json --out market.json
 node scripts/value-scan.mjs --data <snapshot> --market market.json
 ```
@@ -46,6 +48,14 @@ node scripts/value-scan.mjs --data <snapshot> --market market.json
 - Crowded underdog: demand better price.
 - Cross-market mismatch: compare Asian handicap, total, 1x2, and outright.
 - Stale data: usually downgrade `TRADE` to `WAIT`.
+- Low `sourceQuality`: haircut size or require confirmation; do not let weak provenance masquerade as edge.
+
+## Free Market Capture
+
+- Prefer free API/export for `h2h,spreads,totals`, then public browser capture, then manual composite.
+- Public browser capture must save source, timestamp, market type, line, side, and decimal odds.
+- Use `--append-history` when tracking line movement or water movement.
+- `value-scan.mjs` ranks `report.markets[]` across `1x2`, `ah`, and `ou`; legacy `report.matches[]` remains 1x2 only.
 
 ## Sizing
 

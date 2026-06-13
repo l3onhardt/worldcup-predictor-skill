@@ -9,6 +9,7 @@ const commands = [
   ["scripts/predict-match.mjs", "--home", "MEX", "--away", "KOR"],
   ["scripts/predict-match.mjs", "--home", "MEX", "--away", "KOR", "--market", "assets/sample-data/market-snapshot.json"],
   ["scripts/predict-markets.mjs", "--home", "MEX", "--away", "KOR"],
+  ["scripts/fetch-free-market.mjs", "--composite", "assets/sample-data/free-market-composite.json"],
   ["scripts/value-scan.mjs", "--market", "assets/sample-data/market-snapshot.json"],
   ["scripts/simulate-tournament.mjs", "--simulations", "2", "--seed", "smoke"],
   ["scripts/generate-lottery-slip.mjs", "--strategy", "balanced", "--budget", "288"],

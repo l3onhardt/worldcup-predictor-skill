@@ -88,3 +88,21 @@ export function valueMetrics(probability, decimalPrice) {
   const kellyFraction = clamp(Math.max(0, fullKelly) / KELLY_DIVISOR, 0, KELLY_CAP);
   return { ev: round(ev), kellyFraction: round(kellyFraction) };
 }
+
+export function handicapValueMetrics(outcomes, decimalPrice) {
+  if (!Number.isFinite(decimalPrice) || decimalPrice <= 1) {
+    throw new Error("decimal price must be greater than 1.");
+  }
+  const fullWin = outcomes.fullWin ?? 0;
+  const halfWin = outcomes.halfWin ?? 0;
+  const halfLose = outcomes.halfLose ?? 0;
+  const fullLose = outcomes.fullLose ?? 0;
+  const winProfit = decimalPrice - 1;
+  const ev = fullWin * winProfit + halfWin * (winProfit / 2) - halfLose * 0.5 - fullLose;
+  const winEquivalent = fullWin + halfWin * 0.5;
+  const lossEquivalent = fullLose + halfLose * 0.5;
+  const denominator = winEquivalent * winProfit + lossEquivalent;
+  const fullKelly = denominator > 0 ? ev / denominator : 0;
+  const kellyFraction = clamp(Math.max(0, fullKelly) / KELLY_DIVISOR, 0, KELLY_CAP);
+  return { ev: round(ev), kellyFraction: round(kellyFraction) };
+}

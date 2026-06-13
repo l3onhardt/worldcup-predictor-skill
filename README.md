@@ -95,6 +95,9 @@ Exit/Hedge: <hold/add/reduce/hedge condition>
 ```bash
 node scripts/predict-match.mjs --data assets/sample-data/worldcup-2026.json --home MEX --away KOR
 node scripts/predict-markets.mjs --data assets/sample-data/worldcup-2026.json --home MEX --away KOR
+node scripts/fetch-free-market.mjs --composite assets/sample-data/free-market-composite.json --out market.json --append-history logs/markets
+node scripts/fetch-free-market.mjs --the-odds-api-file odds-api-event.json --match-id sample-group-a-1 --bookmaker pinnacle --out market.json
+node scripts/fetch-free-market.mjs --the-odds-api-event <event-id> --sport soccer_fifa_world_cup --match-id <match-id> --out market.json
 node scripts/fetch-market.mjs --manual my-odds.json --out market.json
 node scripts/value-scan.mjs --data assets/sample-data/worldcup-2026.json --market assets/sample-data/market-snapshot.json
 node scripts/blind-commit.mjs --data assets/sample-data/worldcup-2026.json --all

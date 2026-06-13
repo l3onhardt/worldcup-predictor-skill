@@ -1,0 +1,34 @@
+{
+  "source": "free-composite",
+  "fetchedAt": "2026-06-04T12:00:00.000Z",
+  "observations": [
+    {
+      "provider": "public-board-a",
+      "captureMethod": "manual-browser",
+      "quality": 0.7,
+      "matchId": "sample-group-a-1",
+      "marketType": "1x2",
+      "homeName": "Mexico",
+      "awayName": "South Korea",
+      "prices": { "home": 2.3, "draw": 3.2, "away": 3.1 }
+    },
+    {
+      "provider": "public-board-a",
+      "captureMethod": "manual-browser",
+      "quality": 0.72,
+      "matchId": "sample-group-a-1",
+      "marketType": "ah",
+      "line": 0,
+      "prices": { "home": 1.95, "away": 1.95 }
+    },
+    {
+      "provider": "public-board-b",
+      "captureMethod": "api-export",
+      "quality": 0.76,
+      "matchId": "sample-group-a-1",
+      "marketType": "ou",
+      "line": 2.5,
+      "prices": { "over": 1.98, "under": 1.88 }
+    }
+  ]
+}
